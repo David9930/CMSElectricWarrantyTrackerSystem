@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS Electric Warranty Tracker System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            margin: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #1e3c72;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            background: #fff;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .success {
+            color: #28a745;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            padding: 10px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .preview-content {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 25px;
+        }
+
+        .preview-item {
+            display: flex;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .preview-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #1e3c72;
+            width: 200px;
+            flex-shrink: 0;
+        }
+
+        .preview-value {
+            color: #333;
+            flex: 1;
+            word-wrap: break-word;
+        }
+
+        .preview-value.empty {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
+
+            .preview-item {
+                flex-direction: column;
+            }
+
+            .preview-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2a5298;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>CMS Electric</h1>
+            <p>Warranty Tracker System</p>
+        </div>
+        
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="password">Enter Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <div id="loginError" class="error"></div>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+        
+        <!-- Data Entry Screen with one warranty form below-->
+        <div id="dataEntryScreen" class="screen">
+            <form id="warrantyForm">
+                <div class="form-group">
+                    <label for="installer">Installer:</label>
+                    <select id="installer" name="installer" required>
+                        <option value="">Select Installer</option>
+                        <option value="Installer 1">Installer 1</option>
+                        <option value="Installer 2">Installer 2</option>
+                        <option value="Installer 3">Installer 3</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="customerName">Customer Name:</label>
+                    <input type="text" id="customerName" name="customerName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customerAddress">Customer Address:</label>
+                    <textarea id="customerAddress" name="customerAddress" placeholder="Full address including city, state, zip" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="customerEmail">Customer Email:</label>
+                    <input type="email" id="customerEmail" name="customerEmail" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="equipmentType">Equipment Type:</label>
+                        <select id="equipmentType" name="equipmentType" required>
+                            <option value="">Select Type</option>
+                            <option value="Generator">Generator</option>
+                            <option value="Solar System">Solar System</option>
+                            <option value="Electrical Panel">Electrical Panel</option>
+                            <option value="Transfer Switch">Transfer Switch</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="equipmentSize">Equipment Size:</label>
+                        <input type="text" id="equipmentSize" name="equipmentSize" placeholder="e.g., 20kW, 5000W" required>
+                    </div>
+                </div>
+
+                <div class="form-group" id="otherEquipmentGroup" style="display: none;">
+                    <label for="otherEquipmentDescription">Equipment Description:</label>
+                    <input type="text" id="otherEquipmentDescription" name="otherEquipmentDescription" placeholder="Please specify the type of equipment">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modelNumber">Model Number:</label>
+                        <input type="text" id="modelNumber" name="modelNumber" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="serialNumber">Serial Number:</label>
+                        <input type="text" id="serialNumber" name="serialNumber" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supplier">Supplier:</label>
+                        <input type="text" id="supplier" name="supplier" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dateInstalled">Date Installed:</label>
+                        <input type="date" id="dateInstalled" name="dateInstalled" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="specialInfo">Special Installation Information:</label>
+                    <textarea id="specialInfo" name="specialInfo" placeholder="Any special notes, conditions, or installation details..."></textarea>
+                </div>
+
+                <button type="submit" class="btn">Review Submission</button>
+            </form>
+        </div>
+
+        <!-- Preview/Confirmation Screen -->
+        <div id="previewScreen" class="screen">
+            <h2 style="color: #1e3c72; margin-bottom: 20px; text-align: center;">Review Your Submission</h2>
+            <p style="text-align: center; margin-bottom: 30px; color: #666;">Please review the information below before final submission</p>
+            
+            <div id="previewContent" class="preview-content">
+                <!-- Preview content will be populated by JavaScript -->
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button type="button" id="editButton" class="btn" style="background: #6c757d; flex: 1;">
+                    ← Back to Edit
+                </button>
+                <button type="button" id="finalSubmitButton" class="btn" style="flex: 1;">
+                    Confirm & Submit
+                </button>
+            </div>
+            
+            <div class="loading" id="loadingIndicator">
+                <span class="spinner"></span>
+                Saving warranty information...
+            </div>
+            
+            <div id="successMessage" class="success" style="display: none;">
+                Warranty information saved successfully!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CORRECT_PASSWORD = "cms2024electric"; // Change this to your desired password
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzRyOoFTKgsta1E6kFNuMN24IiMgIUQ4_6OjmlQp7bu7N1ZhsDOSZjv1OalreZB3WwENg/exec";
+
+        // DOM Elements
+        const loginScreen = document.getElementById('loginScreen');
+        const dataEntryScreen = document.getElementById('dataEntryScreen');
+        const previewScreen = document.getElementById('previewScreen');
+        const loginForm = document.getElementById('loginForm');
+        const warrantyForm = document.getElementById('warrantyForm');
+        const loginError = document.getElementById('loginError');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const successMessage = document.getElementById('successMessage');
+        const previewContent = document.getElementById('previewContent');
+        const editButton = document.getElementById('editButton');
+        const finalSubmitButton = document.getElementById('finalSubmitButton');
+
+        // Set today's date as default
+        document.getElementById('dateInstalled').valueAsDate = new Date();
+
+        // Show/hide equipment description field based on equipment type selection
+        document.getElementById('equipmentType').addEventListener('change', function() {
+            const otherGroup = document.getElementById('otherEquipmentGroup');
+            const otherDescription = document.getElementById('otherEquipmentDescription');
+            
+            if (this.value === 'Other') {
+                otherGroup.style.display = 'block';
+                otherDescription.required = true;
+            } else {
+                otherGroup.style.display = 'none';
+                otherDescription.required = false;
+                otherDescription.value = '';
+            }
+        });
+
+        // Login functionality
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            
+            if (password === CORRECT_PASSWORD) {
+                loginScreen.classList.remove('active');
+                dataEntryScreen.classList.add('active');
+                loginError.textContent = '';
+            } else {
+                loginError.textContent = 'Incorrect password. Please try again.';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        // Warranty form submission - now goes to preview
+        warrantyForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            showPreview();
+        });
+
+        // Function to show the preview screen
+        function showPreview() {
+            // Collect form data
+            const formData = {
+                installer: document.getElementById('installer').value,
+                customerName: document.getElementById('customerName').value,
+                customerAddress: document.getElementById('customerAddress').value,
+                customerEmail: document.getElementById('customerEmail').value,
+                equipmentType: document.getElementById('equipmentType').value,
+                otherEquipmentDescription: document.getElementById('otherEquipmentDescription').value,
+                equipmentSize: document.getElementById('equipmentSize').value,
+                modelNumber: document.getElementById('modelNumber').value,
+                serialNumber: document.getElementById('serialNumber').value,
+                supplier: document.getElementById('supplier').value,
+                dateInstalled: document.getElementById('dateInstalled').value,
+                specialInfo: document.getElementById('specialInfo').value,
+            };
+
+            // Generate preview HTML
+            let previewHTML = '';
+            
+            const fields = [
+                { label: 'Installer', value: formData.installer },
+                { label: 'Customer Name', value: formData.customerName },
+                { label: 'Customer Address', value: formData.customerAddress },
+                { label: 'Customer Email', value: formData.customerEmail },
+                { label: 'Equipment Type', value: formData.equipmentType },
+                { label: 'Equipment Description', value: formData.otherEquipmentDescription, showIf: formData.equipmentType === 'Other' },
+                { label: 'Equipment Size', value: formData.equipmentSize },
+                { label: 'Model Number', value: formData.modelNumber },
+                { label: 'Serial Number', value: formData.serialNumber },
+                { label: 'Supplier', value: formData.supplier },
+                { label: 'Date Installed', value: formatDate(formData.dateInstalled) },
+                { label: 'Special Installation Information', value: formData.specialInfo }
+            ];
+
+            fields.forEach(field => {
+                if (field.showIf === false) return; // Skip if condition not met
+                
+                const value = field.value || '';
+                const displayValue = value.trim() === '' ? 'Not specified' : value;
+                const valueClass = value.trim() === '' ? 'preview-value empty' : 'preview-value';
+                
+                previewHTML += `
+                    <div class="preview-item">
+                        <div class="preview-label">${field.label}:</div>
+                        <div class="${valueClass}">${displayValue}</div>
+                    </div>
+                `;
+            });
+
+            previewContent.innerHTML = previewHTML;
+            
+            // Switch screens
+            dataEntryScreen.classList.remove('active');
+            previewScreen.classList.add('active');
+            
+            // Store form data for final submission
+            window.currentFormData = formData;
+        }
+
+        // Function to format date for display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'long',
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        // Back to edit button
+        editButton.addEventListener('click', function() {
+            previewScreen.classList.remove('active');
+            dataEntryScreen.classList.add('active');
+            successMessage.style.display = 'none';
+        });
+
+        // Final submit button
+        finalSubmitButton.addEventListener('click', function() {
+            submitWarrantyData();
+        });
+
+        // Function to actually submit the data
+        function submitWarrantyData() {
+            // Show loading indicator
+            loadingIndicator.classList.add('show');
+            successMessage.style.display = 'none';
+            
+            // Add timestamp to stored form data
+            const formData = {
+                ...window.currentFormData,
+                timestamp: new Date().toISOString()
+            };
+
+            // Send data to Google Sheets (if URL is configured)
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.classList.remove('show');
+                    if (data.result === 'success') {
+                        successMessage.style.display = 'block';
+                        // Reset form and return to data entry after success
+                        setTimeout(() => {
+                            warrantyForm.reset();
+                            document.getElementById('dateInstalled').valueAsDate = new Date();
+                            document.getElementById('otherEquipmentGroup').style.display = 'none';
+                            document.getElementById('otherEquipmentDescription').required = false;
+                            previewScreen.classList.remove('active');
+                            dataEntryScreen.classList.add('active');
+                            successMessage.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        alert('Error saving data: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.classList.remove('show');
+                    console.error('Error:', error);
+                    alert('Error submitting data. Please try again.');
+                });
+            } else {
+                // For testing without Google Sheets integration
+                setTimeout(() => {
+                    loadingIndicator.classList.remove('show');
+                    successMessage.style.display = 'block';
+                    console.log('Form data:', formData);
+                    // Reset and return to data entry
+                    setTimeout(() => {
+                        warrantyForm.reset();
+                        document.getElementById('dateInstalled').valueAsDate = new Date();
+                        document.getElementById('otherEquipmentGroup').style.display = 'none';
+                        document.getElementById('otherEquipmentDescription').required = false;
+                        previewScreen.classList.remove('active');
+                        dataEntryScreen.classList.add('active');
+                        successMessage.style.display = 'none';
+                    }, 3000);
+                }, 1500);
+            }
+        }
+
+        // Auto-hide success message after form reset
+        warrantyForm.addEventListener('reset', function() {
+            successMessage.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
