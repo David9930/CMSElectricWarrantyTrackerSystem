@@ -504,29 +504,34 @@
             );
         }
 
-        // Add installer to system
-        async function addInstaller(name) {
-            try {
-                setLoading(true);
-                
-                const success = await sendAdminAction('addInstaller', { name: name });
-                
-                if (success) {
-                    installers.push(name);
-                    displayInstallers();
-                    installerStatus.textContent = `${installers.length} installer${installers.length !== 1 ? 's' : ''} found`;
-                    newInstallerName.value = '';
-                    showStatus(`Installer "${name}" added successfully`, 'success');
-                } else {
-                    throw new Error('Failed to add installer');
-                }
-            } catch (error) {
-                console.error('Error adding installer:', error);
-                showStatus('Error adding installer: ' + error.message, 'error');
-            } finally {
-                setLoading(false);
-            }
+       / Add installer to system
+async function addInstaller(name) {
+    try {
+        setLoading(true);
+        
+        // Send the action
+        await sendAdminAction('addInstaller', { name: name });
+        
+        // Wait a moment for Google Sheets to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Reload installers to verify it was added
+        await loadInstallers();
+        
+        // Check if the installer was actually added
+        if (installers.includes(name)) {
+            newInstallerName.value = '';
+            showStatus(`Installer "${name}" added successfully`, 'success');
+        } else {
+            throw new Error('Installer was not added to the system');
         }
+    } catch (error) {
+        console.error('Error adding installer:', error);
+        showStatus('Error adding installer: ' + error.message, 'error');
+    } finally {
+        setLoading(false);
+    }
+}
 
         // Handle remove installer
         function handleRemoveInstaller(index, name) {
@@ -538,27 +543,32 @@
         }
 
         // Remove installer from system
-        async function removeInstaller(index, name) {
-            try {
-                setLoading(true);
-                
-                const success = await sendAdminAction('removeInstaller', { name: name, index: index });
-                
-                if (success) {
-                    installers.splice(index, 1);
-                    displayInstallers();
-                    installerStatus.textContent = `${installers.length} installer${installers.length !== 1 ? 's' : ''} found`;
-                    showStatus(`Installer "${name}" removed successfully`, 'success');
-                } else {
-                    throw new Error('Failed to remove installer');
-                }
-            } catch (error) {
-                console.error('Error removing installer:', error);
-                showStatus('Error removing installer: ' + error.message, 'error');
-            } finally {
-                setLoading(false);
-            }
+async function removeInstaller(index, name) {
+    try {
+        setLoading(true);
+        
+        // Send the action
+        await sendAdminAction('removeInstaller', { name: name, index: index });
+        
+        // Wait a moment for Google Sheets to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Reload installers to verify it was removed
+        await loadInstallers();
+        
+        // Check if the installer was actually removed
+        if (!installers.includes(name)) {
+            showStatus(`Installer "${name}" removed successfully`, 'success');
+        } else {
+            throw new Error('Installer was not removed from the system');
         }
+    } catch (error) {
+        console.error('Error removing installer:', error);
+        showStatus('Error removing installer: ' + error.message, 'error');
+    } finally {
+        setLoading(false);
+    }
+}
 
         // Send admin action to Google Apps Script
         async function sendAdminAction(action, data) {
