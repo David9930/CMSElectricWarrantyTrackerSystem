@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS Electric Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .admin-content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+
+        .section-title {
+            color: #1e3c72;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .section-status {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .installers-list {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .installer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s ease;
+        }
+
+        .installer-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .installer-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .installer-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .installer-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
+        }
+
+        .btn.btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .btn.btn-danger:hover {
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn.btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+
+        .btn.btn-secondary:hover {
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .add-installer-form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2a5298;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .status-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirmation-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .header, .admin-content {
+                padding: 20px;
+            }
+
+            .add-installer-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .installer-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .installer-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CMS Electric Admin Panel</h1>
+            <p>System Administration & Management</p>
+        </div>
+        
+        <div class="admin-content">
+            <!-- Installers Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Installers</h2>
+                    <div class="section-status" id="installerStatus">Loading...</div>
+                </div>
+                
+                <!-- Add New Installer Form -->
+                <div class="add-installer-form">
+                    <div class="form-group">
+                        <label for="newInstallerName">Add New Installer:</label>
+                        <input type="text" id="newInstallerName" name="newInstallerName" placeholder="Enter installer name" maxlength="50">
+                    </div>
+                    <button type="button" id="addInstallerBtn" class="btn">Add Installer</button>
+                </div>
+                
+                <div class="status-message" id="statusMessage"></div>
+                
+                <div class="loading" id="loadingIndicator">
+                    <span class="spinner"></span>
+                    Processing request...
+                </div>
+                
+                <!-- Installers List -->
+                <div class="installers-list" id="installersList">
+                    <div class="empty-state" id="emptyState">
+                        <h3>No installers found</h3>
+                        <p>Add your first installer using the form above.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmationModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to perform this action?</p>
+            <div class="modal-actions">
+                <button type="button" id="modalCancel" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="modalConfirm" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Replace with your actual Google Apps Script URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_d_Nz2YjH_TqBoe4DOi9sdNmAE5ZTqkJaq3XN80dmYt1MdefQbU0DuJMbU5-gg-4_eg/exec";
+        
+        // Global variables
+        let installers = [];
+        let pendingAction = null;
+
+        // DOM Elements
+        const installersList = document.getElementById('installersList');
+        const emptyState = document.getElementById('emptyState');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const statusMessage = document.getElementById('statusMessage');
+        const installerStatus = document.getElementById('installerStatus');
+        const newInstallerName = document.getElementById('newInstallerName');
+        const addInstallerBtn = document.getElementById('addInstallerBtn');
+        const confirmationModal = document.getElementById('confirmationModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalCancel = document.getElementById('modalCancel');
+        const modalConfirm = document.getElementById('modalConfirm');
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInstallers();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Add installer button
+            addInstallerBtn.addEventListener('click', handleAddInstaller);
+            
+            // Enter key in installer input
+            newInstallerName.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleAddInstaller();
+                }
+            });
+            
+            // Modal buttons
+            modalCancel.addEventListener('click', hideConfirmationModal);
+            modalConfirm.addEventListener('click', executeConfirmedAction);
+            
+            // Close modal on background click
+            confirmationModal.addEventListener('click', function(e) {
+                if (e.target === confirmationModal) {
+                    hideConfirmationModal();
+                }
+            });
+        }
+
+        // Load installers from Google Sheets
+        async function loadInstallers() {
+            try {
+                setLoading(true);
+                installerStatus.textContent = 'Loading...';
+                
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getInstallers&t=${Date.now()}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    installers = result.installers || [];
+                    displayInstallers();
+                    installerStatus.textContent = `${installers.length} installer${installers.length !== 1 ? 's' : ''} found`;
+                    showStatus('Installers loaded successfully', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to load installers');
+                }
+            } catch (error) {
+                console.error('Error loading installers:', error);
+                showStatus('Error loading installers: ' + error.message, 'error');
+                installerStatus.textContent = 'Error loading';
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Display installers in the list
+        function displayInstallers() {
+            if (installers.length === 0) {
+                installersList.innerHTML = '<div class="empty-state" id="emptyState"><h3>No installers found</h3><p>Add your first installer using the form above.</p></div>';
+                return;
+            }
+
+            let html = '';
+            installers.forEach((installer, index) => {
+                html += `
+                    <div class="installer-item">
+                        <div class="installer-name">${escapeHtml(installer)}</div>
+                        <div class="installer-actions">
+                            <button type="button" class="btn btn-danger" onclick="handleRemoveInstaller(${index}, '${escapeHtml(installer)}')">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            installersList.innerHTML = html;
+        }
+
+        // Handle add installer
+        function handleAddInstaller() {
+            const name = newInstallerName.value.trim();
+            
+            if (!name) {
+                showStatus('Please enter an installer name', 'error');
+                newInstallerName.focus();
+                return;
+            }
+
+            if (installers.includes(name)) {
+                showStatus('This installer already exists', 'error');
+                newInstallerName.focus();
+                return;
+            }
+
+            // Show confirmation
+            showConfirmationModal(
+                'Add Installer',
+                `Are you sure you want to add "${name}" as a new installer?`,
+                () => addInstaller(name)
+            );
+        }
+
+        // Add installer to system
+        async function addInstaller(name) {
+            try {
+                setLoading(true);
+                
+                const success = await sendAdminAction('addInstaller', { name: name });
+                
+                if (success) {
+                    installers.push(name);
+                    displayInstallers();
+                    installerStatus.textContent = `${installers.length} installer${installers.length !== 1 ? 's' : ''} found`;
+                    newInstallerName.value = '';
+                    showStatus(`Installer "${name}" added successfully`, 'success');
+                } else {
+                    throw new Error('Failed to add installer');
+                }
+            } catch (error) {
+                console.error('Error adding installer:', error);
+                showStatus('Error adding installer: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Handle remove installer
+        function handleRemoveInstaller(index, name) {
+            showConfirmationModal(
+                'Remove Installer',
+                `Are you sure you want to remove "${name}"? This action cannot be undone.`,
+                () => removeInstaller(index, name)
+            );
+        }
+
+        // Remove installer from system
+        async function removeInstaller(index, name) {
+            try {
+                setLoading(true);
+                
+                const success = await sendAdminAction('removeInstaller', { name: name, index: index });
+                
+                if (success) {
+                    installers.splice(index, 1);
+                    displayInstallers();
+                    installerStatus.textContent = `${installers.length} installer${installers.length !== 1 ? 's' : ''} found`;
+                    showStatus(`Installer "${name}" removed successfully`, 'success');
+                } else {
+                    throw new Error('Failed to remove installer');
+                }
+            } catch (error) {
+                console.error('Error removing installer:', error);
+                showStatus('Error removing installer: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Send admin action to Google Apps Script
+        async function sendAdminAction(action, data) {
+            return new Promise((resolve) => {
+                const requestData = {
+                    action: action,
+                    ...data,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Create hidden form (using proven method)
+                const form = document.createElement('form');
+                form.action = GOOGLE_SCRIPT_URL;
+                form.method = 'POST';
+                form.target = 'adminFrame';
+                form.style.display = 'none';
+                
+                const dataField = document.createElement('input');
+                dataField.type = 'hidden';
+                dataField.name = 'data';
+                dataField.value = JSON.stringify(requestData);
+                form.appendChild(dataField);
+                
+                // Create or get hidden iframe
+                let iframe = document.getElementById('adminFrame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'adminFrame';
+                    iframe.name = 'adminFrame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                // Handle success (form submission doesn't return response easily)
+                setTimeout(() => {
+                    if (form.parentNode) {
+                        document.body.removeChild(form);
+                    }
+                    resolve(true); // Assume success for now
+                }, 1000);
+            });
+        }
+
+        // Show confirmation modal
+        function showConfirmationModal(title, message, action) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            pendingAction = action;
+            confirmationModal.classList.add('show');
+        }
+
+        // Hide confirmation modal
+        function hideConfirmationModal() {
+            confirmationModal.classList.remove('show');
+            pendingAction = null;
+        }
+
+        // Execute confirmed action
+        function executeConfirmedAction() {
+            hideConfirmationModal();
+            if (pendingAction && typeof pendingAction === 'function') {
+                pendingAction();
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type} show`;
+            
+            setTimeout(() => {
+                statusMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            if (loading) {
+                loadingIndicator.classList.add('show');
+                addInstallerBtn.disabled = true;
+            } else {
+                loadingIndicator.classList.remove('show');
+                addInstallerBtn.disabled = false;
+            }
+        }
+
+        // Escape HTML for security
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-focus on installer input
+        newInstallerName.focus();
+    </script>
+</body>
+</html>
