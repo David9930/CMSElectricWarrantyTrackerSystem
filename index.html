@@ -255,7 +255,7 @@
             </form>
         </div>
         
-        <!-- Data Entry Screen with one warranty form below-->
+        <!-- Data Entry Screen -->
         <div id="dataEntryScreen" class="screen">
             <form id="warrantyForm">
                 <div class="form-group">
@@ -368,9 +368,9 @@
 
     <script>
         // Configuration
-        const CORRECT_PASSWORD = "cms2024electric"; // Change this to your desired password
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywwSEgF8LmA6sTMyDIFReEve3u1LkYwp4CPjrh1jwCB737PuoerFGI9j-Z0Q8kjDCFRg/exec";
-     
+        const CORRECT_PASSWORD = "cms2024electric";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_d_Nz2YjH_TqBoe4DOi9sdNmAE5ZTqkJaq3XN80dmYt1MdefQbU0DuJMbU5-gg-4_eg/exec"; // Replace with your new deployment URL
+
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
         const dataEntryScreen = document.getElementById('dataEntryScreen');
@@ -508,58 +508,57 @@
             submitWarrantyData();
         });
 
-        // Function to actually submit the data
+        // Form submission function (using the working method from your system)
         function submitWarrantyData() {
+            // Check if URL is configured
+            if (GOOGLE_SCRIPT_URL === "YOUR_NEW_GOOGLE_SCRIPT_URL_HERE") {
+                alert('Please configure the Google Script URL in the code');
+                return;
+            }
+
             // Show loading indicator
             loadingIndicator.classList.add('show');
             successMessage.style.display = 'none';
             
-            // Add timestamp to stored form data
+            // Prepare form data with timestamp
             const formData = {
                 ...window.currentFormData,
                 timestamp: new Date().toISOString()
             };
 
-            // Send data to Google Sheets (if URL is configured)
-            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-                fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    loadingIndicator.classList.remove('show');
-                    if (data.result === 'success') {
-                        successMessage.style.display = 'block';
-                        // Reset form and return to data entry after success
-                        setTimeout(() => {
-                            warrantyForm.reset();
-                            document.getElementById('dateInstalled').valueAsDate = new Date();
-                            document.getElementById('otherEquipmentGroup').style.display = 'none';
-                            document.getElementById('otherEquipmentDescription').required = false;
-                            previewScreen.classList.remove('active');
-                            dataEntryScreen.classList.add('active');
-                            successMessage.style.display = 'none';
-                        }, 3000);
-                    } else {
-                        alert('Error saving data: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    loadingIndicator.classList.remove('show');
-                    console.error('Error:', error);
-                    alert('Error submitting data. Please try again.');
-                });
-            } else {
-                // For testing without Google Sheets integration
+            try {
+                // Create hidden form (like your working message system)
+                const form = document.createElement('form');
+                form.action = GOOGLE_SCRIPT_URL;
+                form.method = 'POST';
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                const dataField = document.createElement('input');
+                dataField.type = 'hidden';
+                dataField.name = 'data';
+                dataField.value = JSON.stringify(formData);
+                form.appendChild(dataField);
+                
+                // Create or get hidden iframe
+                let iframe = document.getElementById('hiddenFrame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'hiddenFrame';
+                    iframe.name = 'hiddenFrame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                // Handle success (form submission doesn't return response easily)
                 setTimeout(() => {
                     loadingIndicator.classList.remove('show');
                     successMessage.style.display = 'block';
-                    console.log('Form data:', formData);
-                    // Reset and return to data entry
+                    
+                    // Reset form and return to data entry after success
                     setTimeout(() => {
                         warrantyForm.reset();
                         document.getElementById('dateInstalled').valueAsDate = new Date();
@@ -569,7 +568,17 @@
                         dataEntryScreen.classList.add('active');
                         successMessage.style.display = 'none';
                     }, 3000);
-                }, 1500);
+                    
+                    // Clean up form
+                    if (form.parentNode) {
+                        document.body.removeChild(form);
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                loadingIndicator.classList.remove('show');
+                console.error('Error:', error);
+                alert('Error submitting data. Please try again.');
             }
         }
 
