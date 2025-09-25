@@ -457,14 +457,27 @@
                     <div class="installer-item">
                         <div class="installer-name">${escapeHtml(installer)}</div>
                         <div class="installer-actions">
-                            <button type="button" class="btn btn-danger" onclick="handleRemoveInstaller(${index}, '${escapeHtml(installer)}')">
+                            <button type="button" class="btn btn-danger" data-index="${index}" data-name="${escapeHtml(installer)}">
                                 Remove
                             </button>
                         </div>
                     </div>
                 `;
             });
+            
+            // Insert HTML first
             installersList.innerHTML = html;
+            
+            // Then attach event listeners
+            setTimeout(() => {
+                document.querySelectorAll('.installer-actions .btn-danger').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        const name = this.getAttribute('data-name');
+                        handleRemoveInstaller(index, name);
+                    });
+                });
+            }, 100);
         }
 
         // Handle add installer
