@@ -230,14 +230,37 @@
             margin-right: 10px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .logout-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .logout-button:hover {
+            background: rgba(220, 53, 69, 1);
+            transform: translateY(-1px);
+        }
+
+        .logout-button.show {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <button id="logoutButton" class="logout-button">Exit System</button>
+        <div id="progressIndicator" class="progress-indicator">Step 1 of 3: Login</div>
+        
         <div class="logo">
             <h1>CMS Electric</h1>
             <p>Warranty Tracker System</p>
@@ -367,9 +390,20 @@
     </div>
 
     <script>
-        // Configuration
-        const CORRECT_PASSWORD = "cms2024electric";
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_d_Nz2YjH_TqBoe4DOi9sdNmAE5ZTqkJaq3XN80dmYt1MdefQbU0DuJMbU5-gg-4_eg/exec"; // Replace with your new deployment URL
+        // Password encryption: Using SHA-256 hash
+        // This hides the actual password from view source
+        const ENCRYPTED_PASSWORD = "8f268769ac3b72537305cd3fc4e4699a3065bd42ee0bebde4abc867dc2f78f98";
+        
+        const GOOGLE_SCRIPT_URL = "YOUR_NEW_GOOGLE_SCRIPT_URL_HERE"; // Replace with your new deployment URL
+
+        // Simple hash function (SHA-256 equivalent for password checking)
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hash));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -383,6 +417,18 @@
         const previewContent = document.getElementById('previewContent');
         const editButton = document.getElementById('editButton');
         const finalSubmitButton = document.getElementById('finalSubmitButton');
+        const logoutButton = document.getElementById('logoutButton');
+        const progressIndicator = document.getElementById('progressIndicator');
+
+        // Track current step
+        let currentStep = 1;
+
+        // Update progress indicator
+        function updateProgress(step) {
+            currentStep = step;
+            const steps = ['Login', 'Data Entry', 'Review & Submit'];
+            progressIndicator.textContent = `Step ${step} of 3: ${steps[step - 1]}`;
+        }
 
         // Set today's date as default
         document.getElementById('dateInstalled').valueAsDate = new Date();
@@ -402,18 +448,54 @@
             }
         });
 
-        // Login functionality
-        loginForm.addEventListener('submit', function(e) {
+        // Login functionality with encrypted password
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const password = document.getElementById('password').value;
             
-            if (password === CORRECT_PASSWORD) {
-                loginScreen.classList.remove('active');
-                dataEntryScreen.classList.add('active');
-                loginError.textContent = '';
-            } else {
-                loginError.textContent = 'Incorrect password. Please try again.';
+            try {
+                const hashedInput = await hashPassword(password);
+                
+                if (hashedInput === ENCRYPTED_PASSWORD) {
+                    loginScreen.classList.remove('active');
+                    dataEntryScreen.classList.add('active');
+                    logoutButton.classList.add('show');
+                    progressIndicator.classList.add('show');
+                    updateProgress(2);
+                    loginError.textContent = '';
+                } else {
+                    loginError.textContent = 'Incorrect password. Please try again.';
+                    document.getElementById('password').value = '';
+                }
+            } catch (error) {
+                loginError.textContent = 'Password verification failed. Please try again.';
                 document.getElementById('password').value = '';
+            }
+        });
+
+        // Logout functionality
+        logoutButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to exit the warranty system?')) {
+                // Reset everything to initial state
+                loginScreen.classList.add('active');
+                dataEntryScreen.classList.remove('active');
+                previewScreen.classList.remove('active');
+                logoutButton.classList.remove('show');
+                progressIndicator.classList.remove('show');
+                
+                // Clear forms
+                loginForm.reset();
+                warrantyForm.reset();
+                document.getElementById('dateInstalled').valueAsDate = new Date();
+                document.getElementById('otherEquipmentGroup').style.display = 'none';
+                document.getElementById('otherEquipmentDescription').required = false;
+                
+                // Hide messages
+                successMessage.style.display = 'none';
+                loadingIndicator.classList.remove('show');
+                loginError.textContent = '';
+                
+                updateProgress(1);
             }
         });
 
@@ -479,6 +561,7 @@
             // Switch screens
             dataEntryScreen.classList.remove('active');
             previewScreen.classList.add('active');
+            updateProgress(3);
             
             // Store form data for final submission
             window.currentFormData = formData;
@@ -500,6 +583,7 @@
         editButton.addEventListener('click', function() {
             previewScreen.classList.remove('active');
             dataEntryScreen.classList.add('active');
+            updateProgress(2);
             successMessage.style.display = 'none';
         });
 
@@ -567,6 +651,7 @@
                         previewScreen.classList.remove('active');
                         dataEntryScreen.classList.add('active');
                         successMessage.style.display = 'none';
+                        updateProgress(2);
                     }, 3000);
                     
                     // Clean up form
@@ -586,6 +671,9 @@
         warrantyForm.addEventListener('reset', function() {
             successMessage.style.display = 'none';
         });
+
+        // Initialize progress
+        updateProgress(1);
     </script>
 </body>
 </html>
