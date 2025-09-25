@@ -504,34 +504,38 @@
             );
         }
 
-       / Add installer to system
-async function addInstaller(name) {
-    try {
-        setLoading(true);
-        
-        // Send the action
-        await sendAdminAction('addInstaller', { name: name });
-        
-        // Wait a moment for Google Sheets to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Reload installers to verify it was added
-        await loadInstallers();
-        
-        // Check if the installer was actually added
-        if (installers.includes(name)) {
-            newInstallerName.value = '';
-            showStatus(`Installer "${name}" added successfully`, 'success');
-        } else {
-            throw new Error('Installer was not added to the system');
+     // Add installer to system
+        async function addInstaller(name) {
+            try {
+                setLoading(true);
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Saving installer to system...';
+                
+                // Send the action
+                await sendAdminAction('addInstaller', { name: name });
+                
+                // Wait for Google Sheets to process
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Verifying changes...';
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                // Reload installers to verify it was added
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Loading updated installer list...';
+                await loadInstallers();
+                
+                // Check if the installer was actually added
+                if (installers.includes(name)) {
+                    newInstallerName.value = '';
+                    showStatus(`Installer "${name}" added successfully`, 'success');
+                } else {
+                    throw new Error('Installer was not added to the system');
+                }
+            } catch (error) {
+                console.error('Error adding installer:', error);
+                showStatus('Error adding installer: ' + error.message, 'error');
+            } finally {
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Processing request...';
+                setLoading(false);
+            }
         }
-    } catch (error) {
-        console.error('Error adding installer:', error);
-        showStatus('Error adding installer: ' + error.message, 'error');
-    } finally {
-        setLoading(false);
-    }
-}
 
         // Handle remove installer
         function handleRemoveInstaller(index, name) {
@@ -542,34 +546,46 @@ async function addInstaller(name) {
             );
         }
 
-        // Remove installer from system
-async function removeInstaller(index, name) {
-    try {
-        setLoading(true);
-        
-        // Send the action
-        await sendAdminAction('removeInstaller', { name: name, index: index });
-        
-        // Wait a moment for Google Sheets to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Reload installers to verify it was removed
-        await loadInstallers();
-        
-        // Check if the installer was actually removed
-        if (!installers.includes(name)) {
-            showStatus(`Installer "${name}" removed successfully`, 'success');
-        } else {
-            throw new Error('Installer was not removed from the system');
+      // Handle remove installer
+        function handleRemoveInstaller(index, name) {
+            showConfirmationModal(
+                'Remove Installer',
+                `Are you sure you want to remove "${name}"? This action cannot be undone.`,
+                () => removeInstaller(index, name)
+            );
         }
-    } catch (error) {
-        console.error('Error removing installer:', error);
-        showStatus('Error removing installer: ' + error.message, 'error');
-    } finally {
-        setLoading(false);
-    }
-}
 
+        // Remove installer from system
+        async function removeInstaller(index, name) {
+            try {
+                setLoading(true);
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Removing installer from system...';
+                
+                // Send the action
+                await sendAdminAction('removeInstaller', { name: name, index: index });
+                
+                // Wait for Google Sheets to process
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Verifying changes...';
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                // Reload installers to verify it was removed
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Loading updated installer list...';
+                await loadInstallers();
+                
+                // Check if the installer was actually removed
+                if (!installers.includes(name)) {
+                    showStatus(`Installer "${name}" removed successfully`, 'success');
+                } else {
+                    throw new Error('Installer was not removed from the system');
+                }
+            } catch (error) {
+                console.error('Error removing installer:', error);
+                showStatus('Error removing installer: ' + error.message, 'error');
+            } finally {
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Processing request...';
+                setLoading(false);
+            }
+        }
         // Send admin action to Google Apps Script
         async function sendAdminAction(action, data) {
             return new Promise((resolve) => {
