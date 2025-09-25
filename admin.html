@@ -380,7 +380,7 @@
     </div>
 
     <script>
-        // Configuration - Replace with your actual Google Apps Script URL
+        // Configuration
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-Y6Sz17lPYkLqc3qliqwCnxfc8g5uHpX3PP21xA1x6utbQa9fcrdl72dB5GN9wjEhuw/exec";
         
         // Global variables
@@ -389,7 +389,6 @@
 
         // DOM Elements
         const installersList = document.getElementById('installersList');
-        const emptyState = document.getElementById('emptyState');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const statusMessage = document.getElementById('statusMessage');
         const installerStatus = document.getElementById('installerStatus');
@@ -401,36 +400,25 @@
         const modalCancel = document.getElementById('modalCancel');
         const modalConfirm = document.getElementById('modalConfirm');
 
-        // Initialize the application
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadInstallers();
             setupEventListeners();
         });
 
         function setupEventListeners() {
-            // Add installer button
             addInstallerBtn.addEventListener('click', handleAddInstaller);
-            
-            // Enter key in installer input
             newInstallerName.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    handleAddInstaller();
-                }
+                if (e.key === 'Enter') handleAddInstaller();
             });
-            
-            // Modal buttons
             modalCancel.addEventListener('click', hideConfirmationModal);
             modalConfirm.addEventListener('click', executeConfirmedAction);
-            
-            // Close modal on background click
             confirmationModal.addEventListener('click', function(e) {
-                if (e.target === confirmationModal) {
-                    hideConfirmationModal();
-                }
+                if (e.target === confirmationModal) hideConfirmationModal();
             });
         }
 
-        // Load installers from Google Sheets
+        // Load installers
         async function loadInstallers() {
             try {
                 setLoading(true);
@@ -456,10 +444,10 @@
             }
         }
 
-        // Display installers in the list
+        // Display installers
         function displayInstallers() {
             if (installers.length === 0) {
-                installersList.innerHTML = '<div class="empty-state" id="emptyState"><h3>No installers found</h3><p>Add your first installer using the form above.</p></div>';
+                installersList.innerHTML = '<div class="empty-state"><h3>No installers found</h3><p>Add your first installer using the form above.</p></div>';
                 return;
             }
 
@@ -476,7 +464,6 @@
                     </div>
                 `;
             });
-
             installersList.innerHTML = html;
         }
 
@@ -496,7 +483,6 @@
                 return;
             }
 
-            // Show confirmation
             showConfirmationModal(
                 'Add Installer',
                 `Are you sure you want to add "${name}" as a new installer?`,
@@ -504,24 +490,20 @@
             );
         }
 
-     // Add installer to system
+        // Add installer
         async function addInstaller(name) {
             try {
                 setLoading(true);
                 loadingIndicator.innerHTML = '<span class="spinner"></span>Saving installer to system...';
                 
-                // Send the action
                 await sendAdminAction('addInstaller', { name: name });
                 
-                // Wait for Google Sheets to process
                 loadingIndicator.innerHTML = '<span class="spinner"></span>Verifying changes...';
                 await new Promise(resolve => setTimeout(resolve, 5000));
                 
-                // Reload installers to verify it was added
                 loadingIndicator.innerHTML = '<span class="spinner"></span>Loading updated installer list...';
                 await loadInstallers();
                 
-                // Check if the installer was actually added
                 if (installers.includes(name)) {
                     newInstallerName.value = '';
                     showStatus(`Installer "${name}" added successfully`, 'success');
@@ -546,33 +528,20 @@
             );
         }
 
-      // Handle remove installer
-        function handleRemoveInstaller(index, name) {
-            showConfirmationModal(
-                'Remove Installer',
-                `Are you sure you want to remove "${name}"? This action cannot be undone.`,
-                () => removeInstaller(index, name)
-            );
-        }
-
-        // Remove installer from system
+        // Remove installer
         async function removeInstaller(index, name) {
             try {
                 setLoading(true);
                 loadingIndicator.innerHTML = '<span class="spinner"></span>Removing installer from system...';
                 
-                // Send the action
                 await sendAdminAction('removeInstaller', { name: name, index: index });
                 
-                // Wait for Google Sheets to process
                 loadingIndicator.innerHTML = '<span class="spinner"></span>Verifying changes...';
                 await new Promise(resolve => setTimeout(resolve, 5000));
                 
-                // Reload installers to verify it was removed
                 loadingIndicator.innerHTML = '<span class="spinner"></span>Loading updated installer list...';
                 await loadInstallers();
                 
-                // Check if the installer was actually removed
                 if (!installers.includes(name)) {
                     showStatus(`Installer "${name}" removed successfully`, 'success');
                 } else {
@@ -586,7 +555,8 @@
                 setLoading(false);
             }
         }
-        // Send admin action to Google Apps Script
+
+        // Send admin action
         async function sendAdminAction(action, data) {
             return new Promise((resolve) => {
                 const requestData = {
@@ -595,7 +565,6 @@
                     timestamp: new Date().toISOString()
                 };
 
-                // Create hidden form (using proven method)
                 const form = document.createElement('form');
                 form.action = GOOGLE_SCRIPT_URL;
                 form.method = 'POST';
@@ -608,7 +577,6 @@
                 dataField.value = JSON.stringify(requestData);
                 form.appendChild(dataField);
                 
-                // Create or get hidden iframe
                 let iframe = document.getElementById('adminFrame');
                 if (!iframe) {
                     iframe = document.createElement('iframe');
@@ -621,17 +589,16 @@
                 document.body.appendChild(form);
                 form.submit();
                 
-                // Handle success (form submission doesn't return response easily)
                 setTimeout(() => {
                     if (form.parentNode) {
                         document.body.removeChild(form);
                     }
-                    resolve(true); // Assume success for now
+                    resolve(true);
                 }, 1000);
             });
         }
 
-        // Show confirmation modal
+        // Modal functions
         function showConfirmationModal(title, message, action) {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
@@ -639,13 +606,11 @@
             confirmationModal.classList.add('show');
         }
 
-        // Hide confirmation modal
         function hideConfirmationModal() {
             confirmationModal.classList.remove('show');
             pendingAction = null;
         }
 
-        // Execute confirmed action
         function executeConfirmedAction() {
             hideConfirmationModal();
             if (pendingAction && typeof pendingAction === 'function') {
@@ -653,17 +618,13 @@
             }
         }
 
-        // Show status message
+        // UI functions
         function showStatus(message, type) {
             statusMessage.textContent = message;
             statusMessage.className = `status-message ${type} show`;
-            
-            setTimeout(() => {
-                statusMessage.classList.remove('show');
-            }, 5000);
+            setTimeout(() => statusMessage.classList.remove('show'), 5000);
         }
 
-        // Set loading state
         function setLoading(loading) {
             if (loading) {
                 loadingIndicator.classList.add('show');
@@ -674,14 +635,12 @@
             }
         }
 
-        // Escape HTML for security
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Auto-focus on installer input
         newInstallerName.focus();
     </script>
 </body>
