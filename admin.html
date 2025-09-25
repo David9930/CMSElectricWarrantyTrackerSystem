@@ -540,7 +540,13 @@
                 () => removeInstaller(index, name)
             );
         }
-
+function executeConfirmedAction() {
+    console.log('CONFIRM BUTTON CLICKED - pendingAction:', pendingAction);
+    hideConfirmationModal();
+    if (pendingAction && typeof pendingAction === 'function') {
+        pendingAction();
+    }
+}
         // Remove installer
         async function removeInstaller(index, name) {
             try {
