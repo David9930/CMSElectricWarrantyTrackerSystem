@@ -10,7 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -657,22 +657,6 @@
         }
 
         newInstallerName.focus();
-
-        // DEBUG: Verify everything is connected
-console.log('=== DEBUG INFO ===');
-console.log('modalConfirm element:', modalConfirm);
-console.log('modalCancel element:', modalCancel);
-console.log('confirmationModal element:', confirmationModal);
-
-// Test if clicking the button directly works
-setTimeout(() => {
-    if (modalConfirm) {
-        console.log('Adding test click listener to confirm button');
-        modalConfirm.onclick = function() {
-            console.log('CONFIRM BUTTON ONCLICK FIRED!');
-        };
-    }
-}, 1000);
     </script>
 </body>
 </html>
