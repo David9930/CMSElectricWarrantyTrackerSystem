@@ -406,6 +406,28 @@
             setupEventListeners();
         });
 
+        // MODAL FUNCTIONS - DEFINED FIRST BEFORE SETUP
+        function executeConfirmedAction() {
+            console.log('CONFIRM BUTTON CLICKED - pendingAction:', pendingAction);
+            hideConfirmationModal();
+            if (pendingAction && typeof pendingAction === 'function') {
+                pendingAction();
+            }
+        }
+
+        function hideConfirmationModal() {
+            confirmationModal.classList.remove('show');
+            pendingAction = null;
+        }
+
+        function showConfirmationModal(title, message, action) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            pendingAction = action;
+            confirmationModal.classList.add('show');
+        }
+
+        // NOW SETUP EVENT LISTENERS
         function setupEventListeners() {
             addInstallerBtn.addEventListener('click', handleAddInstaller);
             newInstallerName.addEventListener('keypress', function(e) {
@@ -540,13 +562,7 @@
                 () => removeInstaller(index, name)
             );
         }
-function executeConfirmedAction() {
-    console.log('CONFIRM BUTTON CLICKED - pendingAction:', pendingAction);
-    hideConfirmationModal();
-    if (pendingAction && typeof pendingAction === 'function') {
-        pendingAction();
-    }
-}
+
         // Remove installer
         async function removeInstaller(index, name) {
             try {
@@ -615,19 +631,6 @@ function executeConfirmedAction() {
                     resolve(true);
                 }, 1000);
             });
-        }
-
-        // Modal functions
-        function showConfirmationModal(title, message, action) {
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
-            pendingAction = action;
-            confirmationModal.classList.add('show');
-        }
-
-        function hideConfirmationModal() {
-            confirmationModal.classList.remove('show');
-            pendingAction = null;
         }
 
         // UI functions
