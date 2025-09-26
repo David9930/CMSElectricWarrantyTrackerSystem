@@ -630,13 +630,6 @@ function executeConfirmedAction() {
             pendingAction = null;
         }
 
-        function executeConfirmedAction() {
-            hideConfirmationModal();
-            if (pendingAction && typeof pendingAction === 'function') {
-                pendingAction();
-            }
-        }
-
         // UI functions
         function showStatus(message, type) {
             statusMessage.textContent = message;
