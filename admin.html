@@ -656,7 +656,13 @@
             return div.innerHTML;
         }
 
-        newInstallerName.focus();
+/ DEBUG: Verify everything is connected - THIS SHOULD RUN IMMEDIATELY
+console.log('=== SCRIPT LOADED ===');
+console.log('modalConfirm element:', modalConfirm);
+console.log('modalCancel element:', modalCancel);
+console.log('confirmationModal element:', confirmationModal);
+
+newInstallerName.focus();
     </script>
 </body>
 </html>
