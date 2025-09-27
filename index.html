@@ -314,6 +314,7 @@
         <div class="logo">
             <h1>CMS Electric</h1>
             <p>Warranty Tracker System</p>
+            <script src="config.js"></script>  <!-- ADD THIS LINE -->
         </div>
         
         <!-- Login Screen -->
@@ -439,7 +440,7 @@
     <script>
         // Configuration
         const ENCRYPTED_PASSWORD = "8f268769ac3b72537305cd3fc4e4699a3065bd42ee0bebde4abc867dc2f78f98";
-       <script src="admin-config.js"></script>
+       <const GOOGLE_SCRIPT_URL = ADMIN_CONFIG.GOOGLE_SCRIPT_URL;  // ADD THIS LINE
 
         // Simple hash function (SHA-256 equivalent for password checking)
         async function hashPassword(password) {
