@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<!-- admin.html v1.03 - Added java message right after <script> -->
+<!-- admin.html v1.03 - Bug fix: Save pendingAction before hiding modal -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>CMS Electric Admin Panel</title>
     <style>
         * {
@@ -381,7 +384,6 @@
     </div>
 
     <script>
-        alert('JavaScript IS running - version 1.02');
         // Configuration
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-Y6Sz17lPYkLqc3qliqwCnxfc8g5uHpX3PP21xA1x6utbQa9fcrdl72dB5GN9wjEhuw/exec";
         
@@ -408,14 +410,14 @@
             setupEventListeners();
         });
 
-       // MODAL FUNCTIONS - DEFINED FIRST BEFORE SETUP
-function executeConfirmedAction() {
-    const actionToExecute = pendingAction; // Save it first!
-    hideConfirmationModal(); // This sets pendingAction to null, but we saved it
-    if (actionToExecute && typeof actionToExecute === 'function') {
-        actionToExecute(); // Execute the saved function
-    }
-}
+        // Modal functions
+        function executeConfirmedAction() {
+            const actionToExecute = pendingAction;
+            hideConfirmationModal();
+            if (actionToExecute && typeof actionToExecute === 'function') {
+                actionToExecute();
+            }
+        }
 
         function hideConfirmationModal() {
             confirmationModal.classList.remove('show');
@@ -429,27 +431,18 @@ function executeConfirmedAction() {
             confirmationModal.classList.add('show');
         }
 
-       // NOW SETUP EVENT LISTENERS
-function setupEventListeners() {
-    alert('Setting up event listeners...');
-    addInstallerBtn.addEventListener('click', handleAddInstaller);
-    newInstallerName.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') handleAddInstaller();
-    });
-    modalCancel.addEventListener('click', hideConfirmationModal);
-    
-    // Add debug for confirm button
-    alert('Attaching click listener to modalConfirm');
-    modalConfirm.addEventListener('click', function() {
-        alert('!!! MODAL CONFIRM CLICKED !!!');
-        executeConfirmedAction();
-    });
-    
-    confirmationModal.addEventListener('click', function(e) {
-        if (e.target === confirmationModal) hideConfirmationModal();
-    });
-    alert('Event listeners setup complete');
-}
+        // Setup event listeners
+        function setupEventListeners() {
+            addInstallerBtn.addEventListener('click', handleAddInstaller);
+            newInstallerName.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleAddInstaller();
+            });
+            modalCancel.addEventListener('click', hideConfirmationModal);
+            modalConfirm.addEventListener('click', executeConfirmedAction);
+            confirmationModal.addEventListener('click', function(e) {
+                if (e.target === confirmationModal) hideConfirmationModal();
+            });
+        }
 
         // Load installers
         async function loadInstallers() {
@@ -498,10 +491,8 @@ function setupEventListeners() {
                 `;
             });
             
-            // Insert HTML first
             installersList.innerHTML = html;
             
-            // Then attach event listeners
             setTimeout(() => {
                 document.querySelectorAll('.installer-actions .btn-danger').forEach(btn => {
                     btn.addEventListener('click', function() {
