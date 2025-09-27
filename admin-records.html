@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- admin-records.html v1.00 - View all warranty records with search and filter -->
+<!-- admin-records.html v1.01 - Fixed config.js integration -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <title>CMS Electric - View Records</title>
     <link rel="stylesheet" href="admin.css">
+    <script src="config.js"></script>
     <style>
         .container {
             max-width: 1200px;
@@ -257,7 +258,7 @@
     </div>
 
     <script>
-       <script src="admin-config.js"></script>
+        const GOOGLE_SCRIPT_URL = ADMIN_CONFIG.GOOGLE_SCRIPT_URL;
         
         let allRecords = [];
         let filteredRecords = [];
