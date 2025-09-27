@@ -1,8 +1,12 @@
 <!DOCTYPE html>
+<!-- index.html v1.01 - Added dynamic installer loading from Variables sheet, version tracking, cache-busting -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>CMS Electric Warranty Tracker System</title>
     <style>
         * {
@@ -118,6 +122,27 @@
 
         .btn:active {
             transform: translateY(0);
+        }
+
+        .btn-admin {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(42, 82, 152, 0.9);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            width: auto;
+        }
+
+        .btn-admin:hover {
+            background: rgba(42, 82, 152, 1);
+            transform: translateY(-1px);
         }
 
         .error {
@@ -280,6 +305,8 @@
     </style>
 </head>
 <body>
+    <button id="adminButton" class="btn-admin">Admin Panel</button>
+    
     <div class="container">
         <button id="logoutButton" class="logout-button">Exit System</button>
         <div id="progressIndicator" class="progress-indicator">Step 1 of 3: Login</div>
@@ -307,10 +334,7 @@
                 <div class="form-group">
                     <label for="installer">Installer:</label>
                     <select id="installer" name="installer" required>
-                        <option value="">Select Installer</option>
-                        <option value="Installer 1">Installer 1</option>
-                        <option value="Installer 2">Installer 2</option>
-                        <option value="Installer 3">Installer 3</option>
+                        <option value="">Loading installers...</option>
                     </select>
                 </div>
 
@@ -413,11 +437,9 @@
     </div>
 
     <script>
-        // Password encryption: Using SHA-256 hash
-        // This hides the actual password from view source
+        // Configuration
         const ENCRYPTED_PASSWORD = "8f268769ac3b72537305cd3fc4e4699a3065bd42ee0bebde4abc867dc2f78f98";
-        
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-Y6Sz17lPYkLqc3qliqwCnxfc8g5uHpX3PP21xA1x6utbQa9fcrdl72dB5GN9wjEhuw/exec"; // Replace with your new deployment URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-Y6Sz17lPYkLqc3qliqwCnxfc8g5uHpX3PP21xA1x6utbQa9fcrdl72dB5GN9wjEhuw/exec";
 
         // Simple hash function (SHA-256 equivalent for password checking)
         async function hashPassword(password) {
@@ -442,6 +464,8 @@
         const finalSubmitButton = document.getElementById('finalSubmitButton');
         const logoutButton = document.getElementById('logoutButton');
         const progressIndicator = document.getElementById('progressIndicator');
+        const adminButton = document.getElementById('adminButton');
+        const installerSelect = document.getElementById('installer');
 
         // Track current step
         let currentStep = 1;
@@ -452,6 +476,34 @@
             const steps = ['Login', 'Data Entry', 'Review & Submit'];
             progressIndicator.textContent = `Step ${step} of 3: ${steps[step - 1]}`;
         }
+
+        // Load installers from Variables sheet
+        async function loadInstallers() {
+            try {
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getInstallers&t=${Date.now()}`);
+                const result = await response.json();
+                
+                if (result.success && result.installers && result.installers.length > 0) {
+                    installerSelect.innerHTML = '<option value="">Select Installer</option>';
+                    result.installers.forEach(installer => {
+                        const option = document.createElement('option');
+                        option.value = installer;
+                        option.textContent = installer;
+                        installerSelect.appendChild(option);
+                    });
+                } else {
+                    installerSelect.innerHTML = '<option value="">No installers available</option>';
+                }
+            } catch (error) {
+                console.error('Error loading installers:', error);
+                installerSelect.innerHTML = '<option value="">Error loading installers</option>';
+            }
+        }
+
+        // Admin button click
+        adminButton.addEventListener('click', function() {
+            window.open('admin.html', '_blank');
+        });
 
         // Set today's date as default
         document.getElementById('dateInstalled').valueAsDate = new Date();
@@ -486,6 +538,9 @@
                     progressIndicator.classList.add('show');
                     updateProgress(2);
                     loginError.textContent = '';
+                    
+                    // Load installers after successful login
+                    loadInstallers();
                 } else {
                     loginError.textContent = 'Incorrect password. Please try again.';
                     document.getElementById('password').value = '';
@@ -499,21 +554,18 @@
         // Logout functionality
         logoutButton.addEventListener('click', function() {
             if (confirm('Are you sure you want to exit the warranty system?')) {
-                // Reset everything to initial state
                 loginScreen.classList.add('active');
                 dataEntryScreen.classList.remove('active');
                 previewScreen.classList.remove('active');
                 logoutButton.classList.remove('show');
                 progressIndicator.classList.remove('show');
                 
-                // Clear forms
                 loginForm.reset();
                 warrantyForm.reset();
                 document.getElementById('dateInstalled').valueAsDate = new Date();
                 document.getElementById('otherEquipmentGroup').style.display = 'none';
                 document.getElementById('otherEquipmentDescription').required = false;
                 
-                // Hide messages
                 successMessage.style.display = 'none';
                 loadingIndicator.classList.remove('show');
                 loginError.textContent = '';
@@ -530,7 +582,6 @@
 
         // Function to show the preview screen
         function showPreview() {
-            // Collect form data
             const formData = {
                 installer: document.getElementById('installer').value,
                 customerName: document.getElementById('customerName').value,
@@ -546,7 +597,6 @@
                 specialInfo: document.getElementById('specialInfo').value,
             };
 
-            // Generate preview HTML
             let previewHTML = '';
             
             const fields = [
@@ -565,7 +615,7 @@
             ];
 
             fields.forEach(field => {
-                if (field.showIf === false) return; // Skip if condition not met
+                if (field.showIf === false) return;
                 
                 const value = field.value || '';
                 const displayValue = value.trim() === '' ? 'Not specified' : value;
@@ -580,13 +630,9 @@
             });
 
             previewContent.innerHTML = previewHTML;
-            
-            // Switch screens
             dataEntryScreen.classList.remove('active');
             previewScreen.classList.add('active');
             updateProgress(3);
-            
-            // Store form data for final submission
             window.currentFormData = formData;
         }
 
@@ -615,26 +661,17 @@
             submitWarrantyData();
         });
 
-        // Form submission function (using the working method from your system)
+        // Form submission function
         function submitWarrantyData() {
-            // Check if URL is configured
-            if (GOOGLE_SCRIPT_URL === "YOUR_NEW_GOOGLE_SCRIPT_URL_HERE") {
-                alert('Please configure the Google Script URL in the code');
-                return;
-            }
-
-            // Show loading indicator
             loadingIndicator.classList.add('show');
             successMessage.style.display = 'none';
             
-            // Prepare form data with timestamp
             const formData = {
                 ...window.currentFormData,
                 timestamp: new Date().toISOString()
             };
 
             try {
-                // Create hidden form (like your working message system)
                 const form = document.createElement('form');
                 form.action = GOOGLE_SCRIPT_URL;
                 form.method = 'POST';
@@ -647,7 +684,6 @@
                 dataField.value = JSON.stringify(formData);
                 form.appendChild(dataField);
                 
-                // Create or get hidden iframe
                 let iframe = document.getElementById('hiddenFrame');
                 if (!iframe) {
                     iframe = document.createElement('iframe');
@@ -660,12 +696,10 @@
                 document.body.appendChild(form);
                 form.submit();
                 
-                // Handle success (form submission doesn't return response easily)
                 setTimeout(() => {
                     loadingIndicator.classList.remove('show');
                     successMessage.style.display = 'block';
                     
-                    // Reset form and return to data entry after success
                     setTimeout(() => {
                         warrantyForm.reset();
                         document.getElementById('dateInstalled').valueAsDate = new Date();
@@ -675,9 +709,9 @@
                         dataEntryScreen.classList.add('active');
                         successMessage.style.display = 'none';
                         updateProgress(2);
+                        loadInstallers();
                     }, 3000);
                     
-                    // Clean up form
                     if (form.parentNode) {
                         document.body.removeChild(form);
                     }
@@ -690,12 +724,10 @@
             }
         }
 
-        // Auto-hide success message after form reset
         warrantyForm.addEventListener('reset', function() {
             successMessage.style.display = 'none';
         });
 
-        // Initialize progress
         updateProgress(1);
     </script>
 </body>
