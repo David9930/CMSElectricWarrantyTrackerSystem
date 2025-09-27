@@ -408,14 +408,17 @@
             setupEventListeners();
         });
 
-        // MODAL FUNCTIONS - DEFINED FIRST BEFORE SETUP
-        function executeConfirmedAction() {
-            console.log('CONFIRM BUTTON CLICKED - pendingAction:', pendingAction);
-            hideConfirmationModal();
-            if (pendingAction && typeof pendingAction === 'function') {
-                pendingAction();
-            }
-        }
+       // MODAL FUNCTIONS - DEFINED FIRST BEFORE SETUP
+function executeConfirmedAction() {
+    alert('executeConfirmedAction called - pendingAction type: ' + typeof pendingAction);
+    hideConfirmationModal();
+    if (pendingAction && typeof pendingAction === 'function') {
+        alert('About to execute pendingAction!');
+        pendingAction();
+    } else {
+        alert('ERROR: pendingAction is NOT a function!');
+    }
+}
 
         function hideConfirmationModal() {
             confirmationModal.classList.remove('show');
