@@ -410,13 +410,10 @@
 
        // MODAL FUNCTIONS - DEFINED FIRST BEFORE SETUP
 function executeConfirmedAction() {
-    alert('executeConfirmedAction called - pendingAction type: ' + typeof pendingAction);
-    hideConfirmationModal();
-    if (pendingAction && typeof pendingAction === 'function') {
-        alert('About to execute pendingAction!');
-        pendingAction();
-    } else {
-        alert('ERROR: pendingAction is NOT a function!');
+    const actionToExecute = pendingAction; // Save it first!
+    hideConfirmationModal(); // This sets pendingAction to null, but we saved it
+    if (actionToExecute && typeof actionToExecute === 'function') {
+        actionToExecute(); // Execute the saved function
     }
 }
 
