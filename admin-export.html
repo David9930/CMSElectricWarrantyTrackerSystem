@@ -433,7 +433,7 @@
                     doc.setFont(undefined, 'bold');
                     doc.text(field.label, 20, y);
                     doc.setFont(undefined, 'normal');
-                    doc.text(field.value, 70, y);
+                    doc.text(String(field.value), 70, y);
                 }
                 y += lineHeight;
             });
