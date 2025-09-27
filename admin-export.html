@@ -172,7 +172,14 @@
 
     <script>
         const GOOGLE_SCRIPT_URL = ADMIN_CONFIG.GOOGLE_SCRIPT_URL;
-        const { jsPDF } = window.jspdf;
+        
+        // Wait for jsPDF to load
+        function getJsPDF() {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                return window.jspdf.jsPDF;
+            }
+            return null;
+        }
         
         let allRecords = [];
         let filteredRecords = [];
@@ -330,6 +337,12 @@
                 return;
             }
 
+            const jsPDF = getJsPDF();
+            if (!jsPDF) {
+                showStatus('PDF library not loaded. Please refresh the page.', 'error');
+                return;
+            }
+
             const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for more columns
 
             // Header
@@ -370,6 +383,13 @@
 
         function exportIndividualPDF(index) {
             const record = filteredRecords[index];
+            
+            const jsPDF = getJsPDF();
+            if (!jsPDF) {
+                showStatus('PDF library not loaded. Please refresh the page.', 'error');
+                return;
+            }
+
             const doc = new jsPDF();
 
             // Company Header
