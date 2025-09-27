@@ -171,6 +171,35 @@
             margin-bottom: 10px;
         }
 
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .nav-back, .btn, .loading, .status-message {
+                display: none !important;
+            }
+            
+            .header {
+                position: relative !important;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 20px;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            .stat-card, .chart-section {
+                box-shadow: none;
+                border: 1px solid #e0e0e0;
+            }
+        }
+
         @media (max-width: 768px) {
             .bar-label {
                 min-width: 100px;
@@ -192,6 +221,9 @@
         <div class="header">
             <h1>Analytics & Reports</h1>
             <p>Warranty System Statistics and Insights</p>
+            <button onclick="printReport()" class="btn" style="position: absolute; top: 20px; right: 20px; width: auto; padding: 10px 20px;">
+                🖨️ Print Report
+            </button>
         </div>
         
         <div class="admin-content">
@@ -475,6 +507,10 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function printReport() {
+            window.print();
         }
     </script>
 </body>
