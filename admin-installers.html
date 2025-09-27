@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<!-- admin-installers.html v1.04 - Installer management page (formerly admin.html) -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>CMS Electric - Manage Installers</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <a href="admin.html" class="nav-back">← Back to Dashboard</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Manage Installers</h1>
+            <p>Add, Remove, and Manage Installer Names</p>
+        </div>
+        
+        <div class="admin-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Installers</h2>
+                    <div class="section-status" id="installerStatus">Loading...</div>
+                </div>
+                
+                <div class="add-installer-form">
+                    <div class="form-group">
+                        <label for="newInstallerName">Add New Installer:</label>
+                        <input type="text" id="newInstallerName" name="newInstallerName" placeholder="Enter installer name" maxlength="50">
+                    </div>
+                    <button type="button" id="addInstallerBtn" class="btn">Add Installer</button>
+                </div>
+                
+                <div class="status-message" id="statusMessage"></div>
+                
+                <div class="loading" id="loadingIndicator">
+                    <span class="spinner"></span>
+                    Processing request...
+                </div>
+                
+                <div class="installers-list" id="installersList">
+                    <div class="empty-state" id="emptyState">
+                        <h3>No installers found</h3>
+                        <p>Add your first installer using the form above.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirmation-modal" id="confirmationModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to perform this action?</p>
+            <div class="modal-actions">
+                <button type="button" id="modalCancel" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="modalConfirm" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-Y6Sz17lPYkLqc3qliqwCnxfc8g5uHpX3PP21xA1x6utbQa9fcrdl72dB5GN9wjEhuw/exec";
+        
+        let installers = [];
+        let pendingAction = null;
+
+        const installersList = document.getElementById('installersList');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const statusMessage = document.getElementById('statusMessage');
+        const installerStatus = document.getElementById('installerStatus');
+        const newInstallerName = document.getElementById('newInstallerName');
+        const addInstallerBtn = document.getElementById('addInstallerBtn');
+        const confirmationModal = document.getElementById('confirmationModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalCancel = document.getElementById('modalCancel');
+        const modalConfirm = document.getElementById('modalConfirm');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInstallers();
+            setupEventListeners();
+        });
+
+        function executeConfirmedAction() {
+            const actionToExecute = pendingAction;
+            hideConfirmationModal();
+            if (actionToExecute && typeof actionToExecute === 'function') {
+                actionToExecute();
+            }
+        }
+
+        function hideConfirmationModal() {
+            confirmationModal.classList.remove('show');
+            pendingAction = null;
+        }
+
+        function showConfirmationModal(title, message, action) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            pendingAction = action;
+            confirmationModal.classList.add('show');
+        }
+
+        function setupEventListeners() {
+            addInstallerBtn.addEventListener('click', handleAddInstaller);
+            newInstallerName.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleAddInstaller();
+            });
+            modalCancel.addEventListener('click', hideConfirmationModal);
+            modalConfirm.addEventListener('click', executeConfirmedAction);
+            confirmationModal.addEventListener('click', function(e) {
+                if (e.target === confirmationModal) hideConfirmationModal();
+            });
+        }
+
+        async function loadInstallers() {
+            try {
+                setLoading(true);
+                installerStatus.textContent = 'Loading...';
+                
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getInstallers&t=${Date.now()}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    installers = result.installers || [];
+                    displayInstallers();
+                    installerStatus.textContent = `${installers.length} installer${installers.length !== 1 ? 's' : ''} found`;
+                    showStatus('Installers loaded successfully', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to load installers');
+                }
+            } catch (error) {
+                console.error('Error loading installers:', error);
+                showStatus('Error loading installers: ' + error.message, 'error');
+                installerStatus.textContent = 'Error loading';
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function displayInstallers() {
+            if (installers.length === 0) {
+                installersList.innerHTML = '<div class="empty-state"><h3>No installers found</h3><p>Add your first installer using the form above.</p></div>';
+                return;
+            }
+
+            let html = '';
+            installers.forEach((installer, index) => {
+                html += `
+                    <div class="installer-item">
+                        <div class="installer-name">${escapeHtml(installer)}</div>
+                        <div class="installer-actions">
+                            <button type="button" class="btn btn-danger" data-index="${index}" data-name="${escapeHtml(installer)}">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            installersList.innerHTML = html;
+            
+            setTimeout(() => {
+                document.querySelectorAll('.installer-actions .btn-danger').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        const name = this.getAttribute('data-name');
+                        handleRemoveInstaller(index, name);
+                    });
+                });
+            }, 100);
+        }
+
+        function handleAddInstaller() {
+            const name = newInstallerName.value.trim();
+            
+            if (!name) {
+                showStatus('Please enter an installer name', 'error');
+                newInstallerName.focus();
+                return;
+            }
+
+            if (installers.includes(name)) {
+                showStatus('This installer already exists', 'error');
+                newInstallerName.focus();
+                return;
+            }
+
+            showConfirmationModal(
+                'Add Installer',
+                `Are you sure you want to add "${name}" as a new installer?`,
+                () => addInstaller(name)
+            );
+        }
+
+        async function addInstaller(name) {
+            try {
+                setLoading(true);
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Saving installer to system...';
+                
+                await sendAdminAction('addInstaller', { name: name });
+                
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Verifying changes...';
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Loading updated installer list...';
+                await loadInstallers();
+                
+                if (installers.includes(name)) {
+                    newInstallerName.value = '';
+                    showStatus(`Installer "${name}" added successfully`, 'success');
+                } else {
+                    throw new Error('Installer was not added to the system');
+                }
+            } catch (error) {
+                console.error('Error adding installer:', error);
+                showStatus('Error adding installer: ' + error.message, 'error');
+            } finally {
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Processing request...';
+                setLoading(false);
+            }
+        }
+
+        function handleRemoveInstaller(index, name) {
+            showConfirmationModal(
+                'Remove Installer',
+                `Are you sure you want to remove "${name}"? This action cannot be undone.`,
+                () => removeInstaller(index, name)
+            );
+        }
+
+        async function removeInstaller(index, name) {
+            try {
+                setLoading(true);
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Removing installer from system...';
+                
+                await sendAdminAction('removeInstaller', { name: name, index: index });
+                
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Verifying changes...';
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Loading updated installer list...';
+                await loadInstallers();
+                
+                if (!installers.includes(name)) {
+                    showStatus(`Installer "${name}" removed successfully`, 'success');
+                } else {
+                    throw new Error('Installer was not removed from the system');
+                }
+            } catch (error) {
+                console.error('Error removing installer:', error);
+                showStatus('Error removing installer: ' + error.message, 'error');
+            } finally {
+                loadingIndicator.innerHTML = '<span class="spinner"></span>Processing request...';
+                setLoading(false);
+            }
+        }
+
+        async function sendAdminAction(action, data) {
+            return new Promise((resolve) => {
+                const requestData = {
+                    action: action,
+                    ...data,
+                    timestamp: new Date().toISOString()
+                };
+
+                const form = document.createElement('form');
+                form.action = GOOGLE_SCRIPT_URL;
+                form.method = 'POST';
+                form.target = 'adminFrame';
+                form.style.display = 'none';
+                
+                const dataField = document.createElement('input');
+                dataField.type = 'hidden';
+                dataField.name = 'data';
+                dataField.value = JSON.stringify(requestData);
+                form.appendChild(dataField);
+                
+                let iframe = document.getElementById('adminFrame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'adminFrame';
+                    iframe.name = 'adminFrame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                setTimeout(() => {
+                    if (form.parentNode) {
+                        document.body.removeChild(form);
+                    }
+                    resolve(true);
+                }, 1000);
+            });
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type} show`;
+            setTimeout(() => statusMessage.classList.remove('show'), 5000);
+        }
+
+        function setLoading(loading) {
+            if (loading) {
+                loadingIndicator.classList.add('show');
+                addInstallerBtn.disabled = true;
+            } else {
+                loadingIndicator.classList.remove('show');
+                addInstallerBtn.disabled = false;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        newInstallerName.focus();
+    </script>
+</body>
+</html>
