@@ -429,27 +429,27 @@
             confirmationModal.classList.add('show');
         }
 
-        // NOW SETUP EVENT LISTENERS
-        function setupEventListeners() {
-            console.log('Setting up event listeners...');
-            addInstallerBtn.addEventListener('click', handleAddInstaller);
-            newInstallerName.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') handleAddInstaller();
-            });
-            modalCancel.addEventListener('click', hideConfirmationModal);
-            
-            // Add debug for confirm button
-            console.log('Attaching click listener to modalConfirm:', modalConfirm);
-            modalConfirm.addEventListener('click', function() {
-                console.log('!!! MODAL CONFIRM CLICKED (addEventListener) !!!');
-                executeConfirmedAction();
-            });
-            
-            confirmationModal.addEventListener('click', function(e) {
-                if (e.target === confirmationModal) hideConfirmationModal();
-            });
-            console.log('Event listeners setup complete');
-        }
+       // NOW SETUP EVENT LISTENERS
+function setupEventListeners() {
+    alert('Setting up event listeners...');
+    addInstallerBtn.addEventListener('click', handleAddInstaller);
+    newInstallerName.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') handleAddInstaller();
+    });
+    modalCancel.addEventListener('click', hideConfirmationModal);
+    
+    // Add debug for confirm button
+    alert('Attaching click listener to modalConfirm');
+    modalConfirm.addEventListener('click', function() {
+        alert('!!! MODAL CONFIRM CLICKED !!!');
+        executeConfirmedAction();
+    });
+    
+    confirmationModal.addEventListener('click', function(e) {
+        if (e.target === confirmationModal) hideConfirmationModal();
+    });
+    alert('Event listeners setup complete');
+}
 
         // Load installers
         async function loadInstallers() {
