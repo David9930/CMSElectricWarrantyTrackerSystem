@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- admin-records.html v1.01 - Fixed config.js integration -->
+<!-- admin-records.html v1.02 - Added edit functionality -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -93,8 +93,7 @@
             border-bottom: none;
         }
 
-        .btn-view {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        .btn-view, .btn-edit {
             color: white;
             padding: 6px 12px;
             border: none;
@@ -103,6 +102,11 @@
             cursor: pointer;
             text-transform: uppercase;
             font-weight: 500;
+            margin-right: 5px;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
         }
 
         .btn-view:hover {
@@ -110,7 +114,16 @@
             box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
         }
 
-        .record-modal {
+        .btn-edit {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .record-modal, .edit-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -125,11 +138,11 @@
             padding: 20px;
         }
 
-        .record-modal.show {
+        .record-modal.show, .edit-modal.show {
             display: flex;
         }
 
-        .record-modal-content {
+        .record-modal-content, .edit-modal-content {
             background: white;
             border-radius: 12px;
             padding: 30px;
@@ -140,13 +153,13 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        .record-modal-header {
+        .record-modal-header, .edit-modal-header {
             border-bottom: 2px solid #e9ecef;
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
 
-        .record-modal-header h3 {
+        .record-modal-header h3, .edit-modal-header h3 {
             color: #1e3c72;
             font-size: 22px;
             margin-bottom: 5px;
@@ -180,6 +193,41 @@
             font-style: italic;
         }
 
+        .edit-form-group {
+            margin-bottom: 15px;
+        }
+
+        .edit-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .edit-form-group input,
+        .edit-form-group select,
+        .edit-form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .edit-form-group input:focus,
+        .edit-form-group select:focus,
+        .edit-form-group textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        .edit-form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
         .no-records {
             text-align: center;
             padding: 60px 20px;
@@ -198,7 +246,7 @@
             }
 
             table {
-                min-width: 800px;
+                min-width: 900px;
             }
 
             .record-detail-item {
@@ -218,7 +266,7 @@
     <div class="container">
         <div class="header">
             <h1>Warranty Records</h1>
-            <p>View and Search All Warranty Entries</p>
+            <p>View, Search, and Edit Warranty Entries</p>
         </div>
         
         <div class="admin-content">
@@ -244,7 +292,7 @@
         </div>
     </div>
 
-    <!-- Record Detail Modal -->
+    <!-- View Record Modal -->
     <div class="record-modal" id="recordModal">
         <div class="record-modal-content">
             <div class="record-modal-header">
@@ -257,6 +305,95 @@
         </div>
     </div>
 
+    <!-- Edit Record Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h3>Edit Warranty Record</h3>
+            </div>
+            <form id="editForm">
+                <div class="edit-form-group">
+                    <label for="editInstaller">Installer:</label>
+                    <select id="editInstaller" name="installer">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editCustomerName">Customer Name:</label>
+                    <input type="text" id="editCustomerName" name="customerName" required>
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editCustomerAddress">Customer Address:</label>
+                    <textarea id="editCustomerAddress" name="customerAddress"></textarea>
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editCustomerEmail">Customer Email:</label>
+                    <input type="email" id="editCustomerEmail" name="customerEmail">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editEquipmentType">Equipment Type:</label>
+                    <select id="editEquipmentType" name="equipmentType">
+                        <option value="">Select Type</option>
+                        <option value="Generator">Generator</option>
+                        <option value="Solar System">Solar System</option>
+                        <option value="Electrical Panel">Electrical Panel</option>
+                        <option value="Transfer Switch">Transfer Switch</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="edit-form-group" id="editOtherEquipmentGroup" style="display: none;">
+                    <label for="editOtherEquipmentDescription">Equipment Description:</label>
+                    <input type="text" id="editOtherEquipmentDescription" name="otherEquipmentDescription">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editEquipmentSize">Equipment Size:</label>
+                    <input type="text" id="editEquipmentSize" name="equipmentSize">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editModelNumber">Model Number:</label>
+                    <input type="text" id="editModelNumber" name="modelNumber">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editSerialNumber">Serial Number:</label>
+                    <input type="text" id="editSerialNumber" name="serialNumber">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editSupplier">Supplier:</label>
+                    <input type="text" id="editSupplier" name="supplier">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editDateInstalled">Date Installed:</label>
+                    <input type="date" id="editDateInstalled" name="dateInstalled">
+                </div>
+
+                <div class="edit-form-group">
+                    <label for="editSpecialInfo">Special Installation Information:</label>
+                    <textarea id="editSpecialInfo" name="specialInfo"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn" style="flex: 1;">Save Changes</button>
+                </div>
+
+                <div class="loading" id="editLoadingIndicator">
+                    <span class="spinner"></span>
+                    Updating record...
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const GOOGLE_SCRIPT_URL = ADMIN_CONFIG.GOOGLE_SCRIPT_URL;
         
@@ -264,6 +401,7 @@
         let filteredRecords = [];
         let sortColumn = null;
         let sortDirection = 'asc';
+        let currentEditIndex = null;
 
         const loadingIndicator = document.getElementById('loadingIndicator');
         const statusMessage = document.getElementById('statusMessage');
@@ -273,9 +411,16 @@
         const recordModal = document.getElementById('recordModal');
         const recordDetails = document.getElementById('recordDetails');
         const closeModalBtn = document.getElementById('closeModalBtn');
+        
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const editLoadingIndicator = document.getElementById('editLoadingIndicator');
+        const editInstaller = document.getElementById('editInstaller');
 
         document.addEventListener('DOMContentLoaded', function() {
             loadRecords();
+            loadInstallersForEdit();
             setupEventListeners();
         });
 
@@ -285,6 +430,41 @@
             recordModal.addEventListener('click', function(e) {
                 if (e.target === recordModal) hideRecordModal();
             });
+            
+            cancelEditBtn.addEventListener('click', hideEditModal);
+            editModal.addEventListener('click', function(e) {
+                if (e.target === editModal) hideEditModal();
+            });
+            
+            editForm.addEventListener('submit', handleEditSubmit);
+            
+            document.getElementById('editEquipmentType').addEventListener('change', function() {
+                const otherGroup = document.getElementById('editOtherEquipmentGroup');
+                if (this.value === 'Other') {
+                    otherGroup.style.display = 'block';
+                } else {
+                    otherGroup.style.display = 'none';
+                }
+            });
+        }
+
+        async function loadInstallersForEdit() {
+            try {
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getInstallers&t=${Date.now()}`);
+                const result = await response.json();
+                
+                if (result.success && result.installers && result.installers.length > 0) {
+                    editInstaller.innerHTML = '<option value="">Select Installer</option>';
+                    result.installers.forEach(installer => {
+                        const option = document.createElement('option');
+                        option.value = installer;
+                        option.textContent = installer;
+                        editInstaller.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading installers:', error);
+            }
         }
 
         async function loadRecords() {
@@ -352,6 +532,7 @@
                         <td>${escapeHtml(serial)}</td>
                         <td>
                             <button class="btn-view" onclick="showRecordDetails(${index})">View</button>
+                            <button class="btn-edit" onclick="showEditModal(${index})">Edit</button>
                         </td>
                     </tr>
                 `;
@@ -365,7 +546,6 @@
 
             recordsContainer.innerHTML = html;
 
-            // Attach sort listeners
             document.querySelectorAll('th.sortable').forEach(th => {
                 th.addEventListener('click', function() {
                     const column = this.getAttribute('data-column');
@@ -415,7 +595,6 @@
 
             displayRecords();
 
-            // Update sort indicators
             document.querySelectorAll('th.sortable').forEach(th => {
                 th.classList.remove('sorted-asc', 'sorted-desc');
                 if (th.getAttribute('data-column') === column) {
@@ -470,8 +649,92 @@
             recordModal.classList.add('show');
         }
 
+        function showEditModal(index) {
+            currentEditIndex = index;
+            const record = filteredRecords[index];
+            
+            document.getElementById('editInstaller').value = record.Installer || '';
+            document.getElementById('editCustomerName').value = record['Customer Name'] || '';
+            document.getElementById('editCustomerAddress').value = record['Customer Address'] || '';
+            document.getElementById('editCustomerEmail').value = record['Customer Email'] || '';
+            document.getElementById('editEquipmentType').value = record['Equipment Type'] || '';
+            document.getElementById('editEquipmentSize').value = record['Equipment Size'] || '';
+            document.getElementById('editModelNumber').value = record['Model Number'] || '';
+            document.getElementById('editSerialNumber').value = record['Serial Number'] || '';
+            document.getElementById('editSupplier').value = record.Supplier || '';
+            document.getElementById('editSpecialInfo').value = record['Special Installation Information'] || '';
+            
+            if (record['Equipment Type'] === 'Other') {
+                document.getElementById('editOtherEquipmentGroup').style.display = 'block';
+                document.getElementById('editOtherEquipmentDescription').value = record['Other Equipment Description'] || '';
+            }
+            
+            if (record['Date Installed']) {
+                const date = new Date(record['Date Installed']);
+                const dateStr = date.toISOString().split('T')[0];
+                document.getElementById('editDateInstalled').value = dateStr;
+            }
+            
+            editModal.classList.add('show');
+        }
+
+        async function handleEditSubmit(e) {
+            e.preventDefault();
+            
+            if (currentEditIndex === null) return;
+            
+            const record = filteredRecords[currentEditIndex];
+            const formData = new FormData(editForm);
+            
+            const updatedData = {
+                'Installer': formData.get('installer'),
+                'Customer Name': formData.get('customerName'),
+                'Customer Address': formData.get('customerAddress'),
+                'Customer Email': formData.get('customerEmail'),
+                'Equipment Type': formData.get('equipmentType'),
+                'Other Equipment Description': formData.get('otherEquipmentDescription') || '',
+                'Equipment Size': formData.get('equipmentSize'),
+                'Model Number': formData.get('modelNumber'),
+                'Serial Number': formData.get('serialNumber'),
+                'Supplier': formData.get('supplier'),
+                'Date Installed': formData.get('dateInstalled'),
+                'Special Installation Information': formData.get('specialInfo')
+            };
+            
+            try {
+                editLoadingIndicator.classList.add('show');
+                
+                const url = `${GOOGLE_SCRIPT_URL}?action=updateWarrantyRecord&rowIndex=${record.rowIndex}&data=${encodeURIComponent(JSON.stringify(updatedData))}&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Record updated successfully', 'success');
+                    hideEditModal();
+                    
+                    setTimeout(() => {
+                        loadRecords();
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || 'Failed to update record');
+                }
+            } catch (error) {
+                console.error('Error updating record:', error);
+                showStatus('Error updating record: ' + error.message, 'error');
+            } finally {
+                editLoadingIndicator.classList.remove('show');
+            }
+        }
+
         function hideRecordModal() {
             recordModal.classList.remove('show');
+        }
+
+        function hideEditModal() {
+            editModal.classList.remove('show');
+            editForm.reset();
+            document.getElementById('editOtherEquipmentGroup').style.display = 'none';
+            currentEditIndex = null;
         }
 
         function showStatus(message, type) {
@@ -494,8 +757,8 @@
             return div.innerHTML;
         }
 
-        // Make showRecordDetails globally accessible
         window.showRecordDetails = showRecordDetails;
+        window.showEditModal = showEditModal;
     </script>
 </body>
 </html>
