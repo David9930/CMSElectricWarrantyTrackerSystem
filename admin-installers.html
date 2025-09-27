@@ -8,7 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>CMS Electric - Manage Installers</title>
-    <link rel="stylesheet" href="admin.css">
+   <link rel="stylesheet" href="admin.css">
+    <script src="admin-config.js"></script>
 </head>
 <body>
     <a href="admin.html" class="nav-back">← Back to Dashboard</a>
@@ -63,7 +64,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwPy-mO7Reic7sVZFyfh09j4lG0e23rcX5Do4zdrtQk9T-o5CjdgqRQk8ne6z8FGfCHw/exec";
+        const GOOGLE_SCRIPT_URL = ADMIN_CONFIG.GOOGLE_SCRIPT_URL;
         
         let installers = [];
         let pendingAction = null;
