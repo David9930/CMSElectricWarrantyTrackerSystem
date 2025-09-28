@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- admin-export.html v1.00 - Export warranty data as CSV or PDF -->
+<!-- admin-export.html v1.01 - Export warranty data with mobile scrolling fix -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -56,9 +56,19 @@
             margin-top: 20px;
         }
 
+        /* Table container for horizontal scrolling */
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px; /* Ensure table has minimum width for scrolling */
         }
 
         thead {
@@ -71,16 +81,22 @@
             text-align: left;
             font-weight: 600;
             font-size: 14px;
+            white-space: nowrap; /* Prevent text wrapping in headers */
         }
 
         td {
             padding: 12px;
             border-bottom: 1px solid #e9ecef;
             font-size: 14px;
+            white-space: nowrap; /* Prevent text wrapping in cells */
         }
 
         tbody tr:hover {
             background: #f8f9fa;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
         }
 
         .btn-pdf {
@@ -93,6 +109,7 @@
             cursor: pointer;
             text-transform: uppercase;
             font-weight: 500;
+            white-space: nowrap;
         }
 
         .btn-pdf:hover {
@@ -110,6 +127,23 @@
             border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 14px;
+        }
+
+        /* Mobile optimization */
+        @media (max-width: 768px) {
+            table {
+                min-width: 1000px; /* Force horizontal scroll on mobile */
+            }
+            
+            th, td {
+                padding: 8px;
+                font-size: 13px;
+            }
+            
+            .btn-pdf {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
@@ -225,33 +259,43 @@
             }
 
             let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Equipment</th>
-                            <th>Serial #</th>
-                            <th>Installer</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer Name</th>
+                                <th>Address</th>
+                                <th>Equipment Type</th>
+                                <th>Serial Number</th>
+                                <th>Model Number</th>
+                                <th>Date Installed</th>
+                                <th>Installer</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
 
             filteredRecords.forEach((record, index) => {
-                const date = record.Timestamp ? new Date(record.Timestamp).toLocaleDateString() : 'N/A';
-                const customer = record['Customer Name'] || 'N/A';
-                const equipment = record['Equipment Type'] || 'N/A';
-                const serial = record['Serial Number'] || 'N/A';
-                const installer = record.Installer || 'N/A';
+                const date = record.timestamp ? new Date(record.timestamp).toLocaleDateString() : 'N/A';
+                const customer = record.customerName || 'N/A';
+                const address = record.address || 'N/A';
+                const equipment = record.equipmentType || 'N/A';
+                const serial = record.serialNumber || 'N/A';
+                const model = record.modelNumber || 'N/A';
+                const dateInstalled = record.dateInstalled || 'N/A';
+                const installer = record.installer || 'N/A';
 
                 html += `
                     <tr>
                         <td>${escapeHtml(date)}</td>
                         <td>${escapeHtml(customer)}</td>
+                        <td>${escapeHtml(address)}</td>
                         <td>${escapeHtml(equipment)}</td>
                         <td>${escapeHtml(serial)}</td>
+                        <td>${escapeHtml(model)}</td>
+                        <td>${escapeHtml(dateInstalled)}</td>
                         <td>${escapeHtml(installer)}</td>
                         <td>
                             <button class="btn-pdf" onclick="exportIndividualPDF(${index})">PDF</button>
@@ -260,7 +304,7 @@
                 `;
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             recordsContainer.innerHTML = html;
         }
 
@@ -289,35 +333,53 @@
 
             const headers = [
                 'Timestamp',
-                'Installer',
                 'Customer Name',
-                'Customer Address',
-                'Customer Email',
+                'Address',
+                'City',
+                'State', 
+                'Zip Code',
+                'Phone Number',
+                'Email',
                 'Equipment Type',
-                'Other Equipment Description',
-                'Equipment Size',
-                'Model Number',
+                'Other Equipment',
                 'Serial Number',
-                'Supplier',
+                'Model Number',
                 'Date Installed',
-                'Special Installation Information'
+                'Installer',
+                'Special Installation Notes'
             ];
 
             let csv = headers.join(',') + '\n';
 
             allRecords.forEach(record => {
-                const row = headers.map(header => {
-                    let value = record[header] || '';
-                    if (header === 'Timestamp' && value) {
-                        value = new Date(value).toLocaleString();
-                    } else if (header === 'Date Installed' && value) {
-                        value = new Date(value).toLocaleDateString();
+                const row = [
+                    record.timestamp || '',
+                    record.customerName || '',
+                    record.address || '',
+                    record.city || '',
+                    record.state || '',
+                    record.zipCode || '',
+                    record.phoneNumber || '',
+                    record.email || '',
+                    record.equipmentType || '',
+                    record.otherEquipment || '',
+                    record.serialNumber || '',
+                    record.modelNumber || '',
+                    record.dateInstalled || '',
+                    record.installer || '',
+                    record.specialNotes || ''
+                ];
+                
+                // Escape commas and quotes
+                const escapedRow = row.map(field => {
+                    const stringField = String(field);
+                    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                        return `"${stringField.replace(/"/g, '""')}"`;
                     }
-                    // Escape commas and quotes
-                    value = String(value).replace(/"/g, '""');
-                    return `"${value}"`;
+                    return stringField;
                 });
-                csv += row.join(',') + '\n';
+                
+                csv += escapedRow.join(',') + '\n';
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -357,13 +419,13 @@
 
             // Prepare table data
             const tableData = allRecords.map(record => [
-                record.Timestamp ? new Date(record.Timestamp).toLocaleDateString() : '',
-                record['Customer Name'] || '',
-                record.Installer || '',
-                record['Equipment Type'] || '',
-                record['Serial Number'] || '',
-                record['Model Number'] || '',
-                record['Date Installed'] ? new Date(record['Date Installed']).toLocaleDateString() : ''
+                record.timestamp ? new Date(record.timestamp).toLocaleDateString() : '',
+                record.customerName || '',
+                record.installer || '',
+                record.equipmentType || '',
+                record.serialNumber || '',
+                record.modelNumber || '',
+                record.dateInstalled || ''
             ]);
 
             // Generate table
@@ -413,19 +475,22 @@
             doc.setTextColor(0, 0, 0);
 
             const fields = [
-                { label: 'Registration Date:', value: record.Timestamp ? new Date(record.Timestamp).toLocaleDateString() : 'N/A' },
-                { label: 'Customer Name:', value: record['Customer Name'] || 'N/A' },
-                { label: 'Customer Address:', value: record['Customer Address'] || 'N/A' },
-                { label: 'Customer Email:', value: record['Customer Email'] || 'N/A' },
+                { label: 'Registration Date:', value: record.timestamp || 'N/A' },
+                { label: 'Customer Name:', value: record.customerName || 'N/A' },
+                { label: 'Address:', value: record.address || 'N/A' },
+                { label: 'City:', value: record.city || 'N/A' },
+                { label: 'State:', value: record.state || 'N/A' },
+                { label: 'Zip Code:', value: record.zipCode || 'N/A' },
+                { label: 'Phone Number:', value: record.phoneNumber || 'N/A' },
+                { label: 'Email:', value: record.email || 'N/A' },
                 { label: '', value: '' }, // Spacer
-                { label: 'Equipment Type:', value: record['Equipment Type'] || 'N/A' },
-                { label: 'Equipment Size:', value: record['Equipment Size'] || 'N/A' },
-                { label: 'Model Number:', value: record['Model Number'] || 'N/A' },
-                { label: 'Serial Number:', value: record['Serial Number'] || 'N/A' },
-                { label: 'Supplier:', value: record.Supplier || 'N/A' },
+                { label: 'Equipment Type:', value: record.equipmentType || 'N/A' },
+                { label: 'Other Equipment:', value: record.otherEquipment || 'N/A' },
+                { label: 'Model Number:', value: record.modelNumber || 'N/A' },
+                { label: 'Serial Number:', value: record.serialNumber || 'N/A' },
                 { label: '', value: '' }, // Spacer
-                { label: 'Date Installed:', value: record['Date Installed'] ? new Date(record['Date Installed']).toLocaleDateString() : 'N/A' },
-                { label: 'Installed By:', value: record.Installer || 'N/A' }
+                { label: 'Date Installed:', value: record.dateInstalled || 'N/A' },
+                { label: 'Installed By:', value: record.installer || 'N/A' }
             ];
 
             fields.forEach(field => {
@@ -439,14 +504,14 @@
             });
 
             // Special Installation Information
-            if (record['Special Installation Information']) {
+            if (record.specialNotes) {
                 y += 5;
                 doc.setFont(undefined, 'bold');
                 doc.text('Special Installation Information:', 20, y);
                 y += lineHeight;
                 doc.setFont(undefined, 'normal');
                 
-                const splitText = doc.splitTextToSize(record['Special Installation Information'], 170);
+                const splitText = doc.splitTextToSize(record.specialNotes, 170);
                 doc.text(splitText, 20, y);
                 y += splitText.length * lineHeight;
             }
@@ -458,8 +523,8 @@
             doc.text('This certificate serves as proof of warranty registration with CMS Electric.', 105, y, { align: 'center' });
             doc.text(`Generated: ${new Date().toLocaleString()}`, 105, y + 5, { align: 'center' });
 
-            const customer = record['Customer Name'] || 'Warranty';
-            const serial = record['Serial Number'] || 'Certificate';
+            const customer = record.customerName || 'Warranty';
+            const serial = record.serialNumber || 'Certificate';
             doc.save(`CMS_Warranty_${customer.replace(/[^a-z0-9]/gi, '_')}_${serial}.pdf`);
             
             showStatus('Warranty certificate generated successfully', 'success');
