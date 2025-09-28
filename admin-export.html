@@ -1,25 +1,600 @@
-<div id="individualRecords" style="display: none;">
-            <h2>Individual Warranty Certificates</h2>
-            <div class="table-container">
-                <table id="recordsTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Customer Name</th>
-                            <th>Address</th>
-                            <th>Equipment Type</th>
-                            <th>Serial Number</th>
-                            <th>Model Number</th>
-                            <th>Date Installed</th>
-                            <th>Installer</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsTableBody">
-                        <tr>
-                            <td colspan="9" style="text-align: center; padding: 20px;">Loading records...</td>
-                        </tr>
-                    </tbody>
-                </table>
+<!DOCTYPE html>
+<!-- admin-export.html v1.02 - Export warranty data as CSV or PDF with scrollable table -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Export Data - CMS Warranty Admin</title>
+    <link rel="stylesheet" href="admin.css">
+    <script src="config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        .export-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .export-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .export-section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40,167,69,0.3);
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 1200px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <nav class="admin-nav">
+            <div class="nav-brand">
+                <h1>CMS Electric - Admin</h1>
+            </div>
+            <div class="nav-links">
+                <a href="admin.html">Dashboard</a>
+                <a href="admin-installers.html">Installers</a>
+                <a href="admin-records.html">Records</a>
+                <a href="admin-analytics.html">Analytics</a>
+                <a href="admin-export.html" class="active">Export</a>
+            </div>
+        </nav>
+
+        <div class="admin-content">
+            <div class="page-header">
+                <h1>Export Data</h1>
+                <p>Download warranty records in various formats</p>
+            </div>
+
+            <!-- CSV Export Section -->
+            <div class="export-section">
+                <h2>📊 CSV Export</h2>
+                <p>Download all warranty records as a spreadsheet file (opens in Excel, Google Sheets, etc.)</p>
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportCSV()">
+                        📥 Download CSV
+                    </button>
+                </div>
+                <div id="csvStatus" class="status-message"></div>
+            </div>
+
+            <!-- Complete PDF Listing Section -->
+            <div class="export-section">
+                <h2>📄 Complete PDF Listing</h2>
+                <p>Generate a comprehensive PDF document with all warranty records in a table format</p>
+                <div class="export-buttons">
+                    <button class="btn btn-primary" onclick="exportCompletePDF()">
+                        📄 Generate Complete PDF
+                    </button>
+                </div>
+                <div id="pdfStatus" class="status-message"></div>
+            </div>
+
+            <!-- Individual Warranty Certificates Section -->
+            <div class="export-section">
+                <h2>🎫 Individual Warranty Certificates</h2>
+                <p>Search for a specific warranty record and download a formatted PDF certificate</p>
+                
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search by customer name, serial number, equipment type, or installer...">
+                </div>
+
+                <div class="export-buttons">
+                    <button class="btn btn-primary" onclick="loadRecords()">
+                        🔄 Load Records
+                    </button>
+                </div>
+
+                <div id="individualRecords" style="display: none;">
+                    <h3 style="margin-top: 30px;">Select a Record to Export</h3>
+                    <div class="table-container">
+                        <table id="recordsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Customer Name</th>
+                                    <th>Address</th>
+                                    <th>Equipment Type</th>
+                                    <th>Serial Number</th>
+                                    <th>Model Number</th>
+                                    <th>Date Installed</th>
+                                    <th>Installer</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody">
+                                <tr>
+                                    <td colspan="9" style="text-align: center; padding: 20px;">Loading records...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="individualStatus" class="status-message"></div>
             </div>
         </div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = ADMIN_CONFIG.GOOGLE_SCRIPT_URL;
+        let allRecords = [];
+
+        // Helper function to safely get jsPDF
+        function getJsPDF() {
+            if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+                return window.jspdf.jsPDF;
+            }
+            throw new Error('jsPDF library not loaded');
+        }
+
+        // Show status message
+        function showStatus(elementId, message, type) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.style.display = 'block';
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Export to CSV
+        async function exportCSV() {
+            try {
+                showStatus('csvStatus', 'Fetching records...', 'success');
+                
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getWarrantyRecords`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch records');
+                }
+
+                const records = data.records;
+                if (records.length === 0) {
+                    showStatus('csvStatus', 'No records to export', 'error');
+                    return;
+                }
+
+                // Create CSV content
+                const headers = [
+                    'Timestamp',
+                    'Customer Name',
+                    'Address',
+                    'City',
+                    'State',
+                    'Zip Code',
+                    'Phone Number',
+                    'Email',
+                    'Equipment Type',
+                    'Other Equipment',
+                    'Serial Number',
+                    'Model Number',
+                    'Date Installed',
+                    'Installer',
+                    'Special Installation Notes'
+                ];
+
+                let csv = headers.join(',') + '\n';
+
+                records.forEach(record => {
+                    const row = [
+                        record.timestamp || '',
+                        record.customerName || '',
+                        record.address || '',
+                        record.city || '',
+                        record.state || '',
+                        record.zipCode || '',
+                        record.phoneNumber || '',
+                        record.email || '',
+                        record.equipmentType || '',
+                        record.otherEquipment || '',
+                        record.serialNumber || '',
+                        record.modelNumber || '',
+                        record.dateInstalled || '',
+                        record.installer || '',
+                        record.specialNotes || ''
+                    ];
+
+                    // Escape fields that contain commas or quotes
+                    const escapedRow = row.map(field => {
+                        const stringField = String(field);
+                        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                            return `"${stringField.replace(/"/g, '""')}"`;
+                        }
+                        return stringField;
+                    });
+
+                    csv += escapedRow.join(',') + '\n';
+                });
+
+                // Download CSV
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                const date = new Date().toISOString().split('T')[0];
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `CMS_Warranties_${date}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showStatus('csvStatus', `✓ Successfully exported ${records.length} records to CSV`, 'success');
+            } catch (error) {
+                console.error('CSV Export Error:', error);
+                showStatus('csvStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Export Complete PDF
+        async function exportCompletePDF() {
+            try {
+                const jsPDF = getJsPDF();
+                showStatus('pdfStatus', 'Generating PDF...', 'success');
+                
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getWarrantyRecords`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch records');
+                }
+
+                const records = data.records;
+                if (records.length === 0) {
+                    showStatus('pdfStatus', 'No records to export', 'error');
+                    return;
+                }
+
+                // Create PDF
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Header
+                doc.setFontSize(18);
+                doc.text('CMS Electric - Complete Warranty Listing', 148, 15, { align: 'center' });
+                
+                doc.setFontSize(10);
+                const date = new Date().toLocaleDateString();
+                doc.text(`Generated: ${date}`, 148, 22, { align: 'center' });
+
+                // Table data
+                const tableData = records.map(record => [
+                    record.timestamp || '',
+                    record.customerName || '',
+                    record.installer || '',
+                    record.equipmentType || '',
+                    record.serialNumber || '',
+                    record.modelNumber || '',
+                    record.dateInstalled || ''
+                ]);
+
+                // Generate table
+                doc.autoTable({
+                    head: [['Date', 'Customer', 'Installer', 'Equipment', 'Serial #', 'Model #', 'Install Date']],
+                    body: tableData,
+                    startY: 28,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 123, 255] },
+                    styles: { fontSize: 9 },
+                    columnStyles: {
+                        0: { cellWidth: 25 },
+                        1: { cellWidth: 45 },
+                        2: { cellWidth: 35 },
+                        3: { cellWidth: 35 },
+                        4: { cellWidth: 30 },
+                        5: { cellWidth: 30 },
+                        6: { cellWidth: 25 }
+                    }
+                });
+
+                // Save PDF
+                const filename = `CMS_Complete_Warranty_List_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(filename);
+
+                showStatus('pdfStatus', `✓ Successfully generated PDF with ${records.length} records`, 'success');
+            } catch (error) {
+                console.error('PDF Export Error:', error);
+                showStatus('pdfStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Load records for individual export
+        async function loadRecords() {
+            try {
+                const recordsTableBody = document.getElementById('recordsTableBody');
+                recordsTableBody.innerHTML = '<tr><td colspan="9" class="loading">Loading records</td></tr>';
+                
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getWarrantyRecords`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch records');
+                }
+
+                allRecords = data.records;
+                displayRecords(allRecords);
+                document.getElementById('individualRecords').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Load Error:', error);
+                const recordsTableBody = document.getElementById('recordsTableBody');
+                recordsTableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: red;">Error loading records</td></tr>';
+            }
+        }
+
+        // Display records in table
+        function displayRecords(records) {
+            const recordsTableBody = document.getElementById('recordsTableBody');
+            
+            if (records.length === 0) {
+                recordsTableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No records found</td></tr>';
+                return;
+            }
+
+            recordsTableBody.innerHTML = records.map((record, i) => `
+                <tr>
+                    <td>${record.timestamp}</td>
+                    <td>${record.customerName}</td>
+                    <td>${record.address || 'N/A'}</td>
+                    <td>${record.equipmentType}</td>
+                    <td>${record.serialNumber}</td>
+                    <td>${record.modelNumber || 'N/A'}</td>
+                    <td>${record.dateInstalled || 'N/A'}</td>
+                    <td>${record.installer}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="exportIndividualPDF(${i})">PDF</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredRecords = allRecords.filter(record => {
+                return (
+                    (record.customerName && record.customerName.toLowerCase().includes(searchTerm)) ||
+                    (record.serialNumber && record.serialNumber.toLowerCase().includes(searchTerm)) ||
+                    (record.equipmentType && record.equipmentType.toLowerCase().includes(searchTerm)) ||
+                    (record.installer && record.installer.toLowerCase().includes(searchTerm))
+                );
+            });
+            displayRecords(filteredRecords);
+        });
+
+        // Export individual warranty PDF
+        function exportIndividualPDF(index) {
+            try {
+                const jsPDF = getJsPDF();
+                const record = allRecords[index];
+
+                if (!record) {
+                    showStatus('individualStatus', 'Record not found', 'error');
+                    return;
+                }
+
+                // Create PDF
+                const doc = new jsPDF();
+                
+                // Header
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text('CMS ELECTRIC', 105, 20, { align: 'center' });
+                
+                doc.setFontSize(16);
+                doc.text('WARRANTY CERTIFICATE', 105, 30, { align: 'center' });
+                
+                // Line separator
+                doc.setLineWidth(0.5);
+                doc.line(20, 35, 190, 35);
+
+                // Warranty details
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                
+                let y = 50;
+                const lineHeight = 10;
+
+                const fields = [
+                    { label: 'Registration Date:', value: record.timestamp },
+                    { label: 'Customer Name:', value: record.customerName },
+                    { label: 'Address:', value: record.address },
+                    { label: 'City:', value: record.city },
+                    { label: 'State:', value: record.state },
+                    { label: 'Zip Code:', value: record.zipCode },
+                    { label: 'Phone Number:', value: record.phoneNumber },
+                    { label: 'Email:', value: record.email },
+                    { label: '', value: '' }, // Spacer
+                    { label: 'Equipment Type:', value: record.equipmentType },
+                    { label: 'Other Equipment:', value: record.otherEquipment || 'N/A' },
+                    { label: 'Serial Number:', value: record.serialNumber },
+                    { label: 'Model Number:', value: record.modelNumber || 'N/A' },
+                    { label: 'Date Installed:', value: record.dateInstalled || 'N/A' },
+                    { label: 'Installed By:', value: record.installer }
+                ];
+
+                fields.forEach(field => {
+                    if (field.label) {
+                        doc.setFont(undefined, 'bold');
+                        doc.text(field.label, 20, y);
+                        doc.setFont(undefined, 'normal');
+                        doc.text(String(field.value), 70, y);
+                    }
+                    y += lineHeight;
+                });
+
+                // Special notes section
+                if (record.specialNotes) {
+                    y += 5;
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Special Installation Notes:', 20, y);
+                    y += lineHeight;
+                    doc.setFont(undefined, 'normal');
+                    
+                    const splitNotes = doc.splitTextToSize(String(record.specialNotes), 170);
+                    doc.text(splitNotes, 20, y);
+                    y += splitNotes.length * 7;
+                }
+
+                // Footer
+                doc.setFontSize(9);
+                doc.setTextColor(100);
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 280, { align: 'center' });
+
+                // Save PDF
+                const filename = `CMS_Warranty_${record.customerName.replace(/[^a-z0-9]/gi, '_')}_${record.serialNumber}.pdf`;
+                doc.save(filename);
+
+                showStatus('individualStatus', `✓ PDF generated for ${record.customerName}`, 'success');
+            } catch (error) {
+                console.error('Individual PDF Error:', error);
+                showStatus('individualStatus', `✗ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
